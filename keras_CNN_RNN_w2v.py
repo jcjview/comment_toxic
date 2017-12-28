@@ -1,23 +1,21 @@
 import h5py
+import os
 import pandas as pd
+import numpy as np
 from keras.callbacks import EarlyStopping, ModelCheckpoint
-from keras.layers import Dense, Input
+from keras.layers import Dense, Input,Embedding
 from keras.layers import GRU, Dropout, MaxPooling1D, Conv1D
 from keras.models import Model
+from config import  *
 
-MAX_FEATURES = 20000
-MAX_TEXT_LENGTH = 100
-BATCH_SIZE = 32
-EPOCHS = 10
-VALIDATION_SPLIT = 0.1
-embed_dim = 300
-CLASSES_LIST = ["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
 
 
 def get_model():
-    inp = Input(shape=(MAX_TEXT_LENGTH, embed_dim))
-    # inp = w2v_embedding(inp)
-    main = Dropout(0.2)(inp)
+    inp = Input(shape=(MAX_TEXT_LENGTH,),dtype='int32')
+    embedding_layer = Embedding(MAX_FEATURES, embedding_dims,dropout=0.2,
+                    trainable=True)
+    main=embedding_layer(inp)
+    # main = Dropout(0.2)(main)
     main = Conv1D(filters=32, kernel_size=3, padding='valid', activation='relu')(main)
     main = MaxPooling1D(pool_size=2)(main)
     main = Conv1D(filters=32, kernel_size=2, padding='same', activation='relu')(main)
@@ -26,6 +24,11 @@ def get_model():
     main = Dense(16, activation="relu")(main)
     main = Dense(6, activation="sigmoid")(main)
     model = Model(inputs=inp, outputs=main)
+
+    if os.path.exists('w2v_embedding_layer.npz'):
+        w1 = np.load("w2v_embedding_layer.npz")["arr_0"]
+        embedding_layer.set_weights([w1])
+        print("load embedding layer OK")
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
     model.summary()
     return model
@@ -48,12 +51,12 @@ def submit(y_test):
     sample_submission.to_csv("baseline.csv", index=False)
 
 
-train = h5py.File('./data/train_d2v.h5', 'r')
-test = h5py.File('./data/test_d2v.h5', 'r')
-X_train = train['train_d2v'][:]
-X_test = test['test_d2v'][:]
-train_label = h5py.File('./train_label.h5', 'r')
-y = train_label['train_lebal'][:]
+train = h5py.File('./data/train_token.h5', 'r')
+test = h5py.File('./data/test_token.h5', 'r')
+X_train = train['train_token'][:]
+X_test = test['test_token'][:]
+train_label = h5py.File('./data/train_label.h5', 'r')
+y = train_label['train_label'][:]
 
 y_test = train_fit_predict(get_model(), X_train, X_test, y)
 
