@@ -1,5 +1,6 @@
 import sys, os, re, csv, codecs, numpy as np, pandas as pd
 
+from keras.callbacks import ModelCheckpoint, EarlyStopping
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras.layers import Dense, Input, LSTM, Embedding, Dropout, Activation
@@ -9,9 +10,9 @@ from keras import initializers, regularizers, constraints, optimizers, layers
 
 path = './data/'
 comp = ''
-EMBEDDING_FILE=f'{path}glove.6B.50d.txt'
-TRAIN_DATA_FILE=f'{path}{comp}train.csv'
-TEST_DATA_FILE=f'{path}{comp}test.csv'
+EMBEDDING_FILE=path+'glove.6B.50d.txt'
+TRAIN_DATA_FILE=path+'train.csv'
+TEST_DATA_FILE=path+'test.csv'
 
 embed_size = 50 # how big is each word vector
 max_features = 20000 # how many unique words to use (i.e num rows in embedding vector)
@@ -43,6 +44,8 @@ for word, i in word_index.items():
     if i >= max_features: continue
     embedding_vector = embeddings_index.get(word)
     if embedding_vector is not None: embedding_matrix[i] = embedding_vector
+file_path = "weights_LSTM_glove.best.hdf5"
+
 inp = Input(shape=(maxlen,))
 x = Embedding(max_features, embed_size, weights=[embedding_matrix])(inp)
 x = Bidirectional(LSTM(50, return_sequences=True, dropout=0.1, recurrent_dropout=0.1))(x)
@@ -52,10 +55,12 @@ x = Dropout(0.1)(x)
 x = Dense(6, activation="sigmoid")(x)
 model = Model(inputs=inp, outputs=x)
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-
-model.fit(X_t, y, batch_size=32, epochs=2) # validation_split=0.1);
+checkpoint = ModelCheckpoint(file_path, monitor='loss', verbose=1, save_best_only=True, mode='min')
+early = EarlyStopping(monitor="loss", mode="min", patience=5)
+callbacks_list = [checkpoint, early]
+model.fit(X_t, y, batch_size=32, epochs=2, callbacks=callbacks_list) # validation_split=0.1);
 
 y_test = model.predict([X_te], batch_size=1024, verbose=1)
-sample_submission = pd.read_csv(f'{path}{comp}sample_submission.csv')
+sample_submission = pd.read_csv(path+'sample_submission.csv')
 sample_submission[list_classes] = y_test
 sample_submission.to_csv('submission.csv', index=False)
