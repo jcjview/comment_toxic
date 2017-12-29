@@ -8,15 +8,18 @@ from keras.layers import Bidirectional, GlobalMaxPool1D
 from keras.models import Model
 from keras import initializers, regularizers, constraints, optimizers, layers
 
+import config
+
 path = './data/'
 comp = ''
-EMBEDDING_FILE=path+'glove.6B.50d.txt'
+# EMBEDDING_FILE=path+'glove.6B.50d.txt'
+EMBEDDING_FILE='w2v.txt'
 TRAIN_DATA_FILE=path+'train.csv'
 TEST_DATA_FILE=path+'test.csv'
 
-embed_size = 50 # how big is each word vector
-max_features = 20000 # how many unique words to use (i.e num rows in embedding vector)
-maxlen = 100 # max number of words in a comment to use
+embed_size = config.embedding_dims # how big is each word vector
+max_features = config.MAX_FEATURES # how many unique words to use (i.e num rows in embedding vector)
+maxlen = config.MAX_TEXT_LENGTH # max number of words in a comment to use
 
 train = pd.read_csv(TRAIN_DATA_FILE)
 test = pd.read_csv(TEST_DATA_FILE)
@@ -34,7 +37,10 @@ X_t = pad_sequences(list_tokenized_train, maxlen=maxlen)
 X_te = pad_sequences(list_tokenized_test, maxlen=maxlen)
 
 def get_coefs(word,*arr): return word, np.asarray(arr, dtype='float32')
-embeddings_index = dict(get_coefs(*o.strip().split()) for o in open(EMBEDDING_FILE,encoding='utf-8'))
+fp=open(EMBEDDING_FILE,encoding='utf-8')
+fp.readline()
+embeddings_index = dict(get_coefs(*o.strip().split()) for o in fp)
+fp.close()
 all_embs = np.stack(embeddings_index.values())
 emb_mean,emb_std = all_embs.mean(), all_embs.std()
 word_index = tokenizer.word_index
