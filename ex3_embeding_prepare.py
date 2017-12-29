@@ -16,7 +16,7 @@ i = 1
 from config import  *
 
 
-weights = np.zeros([max_features,embedding_dims],dtype=np.float32)
+weights = np.zeros([MAX_FEATURES,embedding_dims],dtype=np.float32)
 f=open('w2v.txt','r',encoding='utf-8')
 f.readline()
 for line in f:

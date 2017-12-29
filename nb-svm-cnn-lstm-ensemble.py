@@ -1,6 +1,6 @@
 import numpy as np, pandas as pd
 
-f_lstm = 'baseline.csv'
+f_lstm = 'submission-LSTM.csv'
 f_nbsvm = 'submission_nb-svm.csv'
 
 p_lstm = pd.read_csv(f_lstm)
