@@ -1,7 +1,7 @@
 import numpy as np, pandas as pd
 
 f_baseline = 'submission_w2v_lstm.csv'
-f_lstm = 'submission-LSTM.csv'
+f_lstm = 'submission-glove300.csv'
 f_nbsvm = 'submission_nb-svm.csv'
 
 p_baseline=pd.read_csv(f_baseline)
