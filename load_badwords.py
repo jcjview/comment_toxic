@@ -50,7 +50,7 @@ train = ""
 fptemp.close()
 # data_save.append(['word','toxic','severe_toxic','obscene','threat','insult','identity_hate'])
 print(N)
-"""
+
 comments = pd.read_csv('./baseline/toxicity_comments.tsv', sep = '\t', index_col = 0)
 
 annotations = pd.read_csv('./baseline/toxicity_annotations.tsv',  sep = '\t')
@@ -81,7 +81,7 @@ for index, row in result.iterrows():
                     count_word_class[label][word] += 1
                     N += 1
 
-"""
+
 fp2 = open("pmi_save2.csv", 'w', encoding="utf-8")
 with open("pmi_save1.csv", 'w', encoding="utf-8") as fp:
     for word in count_word:

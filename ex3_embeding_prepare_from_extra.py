@@ -28,12 +28,15 @@ from config import  *
 
 
 train = pd.read_csv(TRAIN_DATA_FILE)
-test = pd.read_csv(TEST_DATA_FILE)
+# test = pd.read_csv(TEST_DATA_FILE)
 
-list_sentences_train = train["comment_text"].fillna("_na_").values
-list_classes = ["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
-y = train[list_classes].values
-list_sentences_test = test["comment_text"].fillna("_na_").values
+y = train[CLASSES_LIST].values
+
+# list_sentences_train = train["comment_text"].fillna("_na_").values
+# list_sentences_test = test["comment_text"].fillna("_na_").values
+
+list_sentences_train = open(train_token_path).readline()
+list_sentences_test = open(train_token_path).readline()
 
 tokenizer = Tokenizer(num_words=MAX_FEATURES)
 tokenizer.fit_on_texts(list(list_sentences_train))

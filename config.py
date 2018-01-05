@@ -4,8 +4,10 @@ MAX_TEXT_LENGTH = 100
 BATCH_SIZE = 32
 EPOCHS = 5
 VALIDATION_SPLIT = 0.1
+SPLIT=1000
 CLASSES_LIST = ["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
 path = './data/'
+
 TRAIN_DATA_FILE=path+'train.csv'
 TEST_DATA_FILE=path+'test.csv'
 train_token_path='./train_corps.txt'
@@ -25,3 +27,7 @@ with open("data/badwords.txt") as fp:
             badwords[line] = line
         elif len(lines) == 2 and lines[0] not in badwords:
             badwords[lines[0].strip()] = lines[1].strip().replace(" ", "_")
+
+with open("data/stopwords.txt") as fp:
+    for line in fp:
+        stop_words.add(line.strip())

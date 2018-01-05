@@ -5,10 +5,17 @@ import numpy as np
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras.layers import Dense, Input,Embedding
 from keras.layers import GRU, Dropout, MaxPooling1D, Conv1D
+from keras.preprocessing import text, sequence
 from keras.models import Model
 from config import  *
 
 
+def get_X_train_X_test(train, test):
+    tokenizer = text.Tokenizer(num_words=MAX_FEATURES)
+    tokenizer.fit_on_texts(train)
+    train_tokenized = tokenizer.texts_to_sequences(train)
+    test_tokenized = tokenizer.texts_to_sequences(test)
+    return sequence.pad_sequences(train_tokenized, maxlen=MAX_TEXT_LENGTH), sequence.pad_sequences(test_tokenized, maxlen=MAX_TEXT_LENGTH)
 
 def get_model():
     inp = Input(shape=(MAX_TEXT_LENGTH,),dtype='int32')
@@ -35,12 +42,21 @@ def get_model():
 
 
 def train_fit_predict(model, X_train, X_test, y):
+    print(X_train.shape)
+    print(y.shape)
+    print(X_test.shape)
+    # validation_data
+    valid_x=X_train[0:SPLIT]
+    train_x=X_train[SPLIT:]
+    valid_y=y[0:SPLIT]
+    train_y=y[SPLIT:]
+
     file_path = "weights_base.best.hdf5"
     checkpoint = ModelCheckpoint(file_path, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
     early = EarlyStopping(monitor="loss", mode="min", patience=5)
     callbacks_list = [checkpoint, early]
-    model.fit(X_train, y, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=1, shuffle=True,
-              validation_split=VALIDATION_SPLIT, callbacks=callbacks_list)
+    model.fit(train_x, train_y, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=1,
+              validation_data=(valid_x, valid_y), callbacks=callbacks_list)
     model.load_weights(file_path)
     return model.predict(X_test)
 
@@ -51,12 +67,11 @@ def submit(y_test):
     sample_submission.to_csv("baseline.csv", index=False)
 
 
-train = h5py.File('./data/train_token.h5', 'r')
-test = h5py.File('./data/test_token.h5', 'r')
-X_train = train['train_token'][:]
-X_test = test['test_token'][:]
-train_label = h5py.File('./data/train_label.h5', 'r')
-y = train_label['train_label'][:]
+train = open(train_token_path,encoding='utf-8').readlines()
+test = open(train_token_path,encoding='utf-8').readlines()
+X_train,X_test = get_X_train_X_test(train,test)
+train = pd.read_csv(TRAIN_DATA_FILE)
+y = train[CLASSES_LIST].values
 
 y_test = train_fit_predict(get_model(), X_train, X_test, y)
 
