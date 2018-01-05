@@ -45,11 +45,18 @@ def get_model():
     return model
 
 def train_fit_predict(model, X_train, X_test, y):
+    SPLIT=1000
+    valid_x=X_train[0:SPLIT]
+    valid_y=y[0:SPLIT]
+    train_x=X_train[SPLIT:]
+    train_y=y[SPLIT:]
     file_path="weights_base.best.hdf5"
     checkpoint = ModelCheckpoint(file_path, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
     early = EarlyStopping(monitor="val_loss", mode="min", patience=20)
     callbacks_list = [checkpoint, early]
-    model.fit(X_train, y, batch_size=BATCH_SIZE, epochs=EPOCHS,  verbose=1,shuffle=True, validation_split=VALIDATION_SPLIT, callbacks=callbacks_list)
+    model.fit(train_x, train_y, batch_size=BATCH_SIZE, epochs=EPOCHS,  verbose=1,
+              validation_data=(valid_x, valid_y), callbacks=callbacks_list)
+
     model.load_weights(file_path)
     return model.predict(X_test)
 
@@ -59,7 +66,7 @@ def submit(y_test):
     sample_submission.to_csv("baseline.csv", index=False)
 
 
-train = pd.read_csv("./data/train.csv")
+train = pd.read_csv("./data/train_valid.csv")
 test = pd.read_csv("./data/test.csv")
 
 X_train, X_test = get_X_train_X_test(train, test)

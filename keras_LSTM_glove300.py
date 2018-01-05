@@ -13,7 +13,6 @@ import config
 path = './data/'
 comp = ''
 # EMBEDDING_FILE=path+'glove.6B.50d.txt'
-EMBEDDING_FILE='d:\\Users\\xj\\Downloads\\glove-840b-tokens-300d-vectors\\glove.840B.300d.txt'
 TRAIN_DATA_FILE=path+'train.csv'
 TEST_DATA_FILE=path+'test.csv'
 
@@ -43,22 +42,9 @@ def get_coefs(word,*arr):
     except:
         return word,np.random.normal(size=(embed_size,1))
 
-embeddings_index={}
-with open(EMBEDDING_FILE,encoding='utf-8') as fp:
-    for o in fp:
-        word,vec=get_coefs(*o.strip().split())
-        if word in word_index and word not in embeddings_index:
-            embeddings_index[word]=vec
-all_embs = np.stack(embeddings_index.values())
-emb_mean,emb_std = all_embs.mean(), all_embs.std()
-nb_words = min(max_features, len(word_index))
-embedding_matrix = np.random.normal(emb_mean, emb_std, (nb_words, embed_size))
-for word, i in word_index.items():
-    if i >= max_features: continue
-    embedding_vector = embeddings_index.get(word)
-    if embedding_vector is not None: embedding_matrix[i] = embedding_vector
-file_path = "weights_LSTM_glove.best.hdf5"
 
+embedding_matrix = np.load("w2v_embedding_layer.npz")["arr_0"]
+file_path = "weights_LSTM_glove.best.hdf5"
 inp = Input(shape=(maxlen,))
 x = Embedding(max_features, embed_size, weights=[embedding_matrix])(inp)
 x = Bidirectional(LSTM(50, return_sequences=True, dropout=0.1, recurrent_dropout=0.1))(x)

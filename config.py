@@ -5,7 +5,23 @@ BATCH_SIZE = 32
 EPOCHS = 5
 VALIDATION_SPLIT = 0.1
 CLASSES_LIST = ["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
-
-
+path = './data/'
+TRAIN_DATA_FILE=path+'train.csv'
+TEST_DATA_FILE=path+'test.csv'
 train_token_path='./train_corps.txt'
 test_token_path='./test_corps.txt'
+
+stop_words = {'the', 'a', 'an'}
+stop_words.update(
+    ['.', ',', '"', "'", '?', ':', ';', '(', ')', '[', ']', '{', '}','\'\'','``','...','-','%'])  # remove it if you need punctuation
+
+badwords = {}
+
+with open("data/badwords.txt") as fp:
+    for line in fp:
+        line = line.lower().strip()
+        lines = line.split(',')
+        if len(lines) == 1 and line not in badwords:
+            badwords[line] = line
+        elif len(lines) == 2 and lines[0] not in badwords:
+            badwords[lines[0].strip()] = lines[1].strip().replace(" ", "_")
