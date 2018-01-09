@@ -35,6 +35,6 @@ for index, row in shuffle_data.iterrows():
     d = dropout(d, p=0.8)
     shuffle_data.loc[index, 'comment_text'] = " ".join(d)
 
-shuffle_data.to_csv('./data/shuffle_data.csv', encoding='utf-8')
+shuffle_data.to_csv(config.path+'shuffle_data.csv', encoding='utf-8')
 result = pd.concat([valid,shuffle_data])
-result.to_csv('./data/train_valid_test.csv', encoding='utf-8')
+result.to_csv(config.path+'train_valid_test.csv', encoding='utf-8')

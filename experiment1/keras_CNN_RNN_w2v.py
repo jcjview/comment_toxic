@@ -11,8 +11,8 @@ from config import  *
 
 
 def get_X_train_X_test(train, test):
-    print(len(train))
-    print(len(test))
+    print('trainset ',len(train))
+    print('testset ',len(test))
     tokenizer = text.Tokenizer(num_words=MAX_FEATURES)
     tokenizer.fit_on_texts(train)
     train_tokenized = tokenizer.texts_to_sequences(train)
@@ -56,8 +56,7 @@ def train_fit_predict(model, X_train, X_test, y):
     checkpoint = ModelCheckpoint(file_path, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
     early = EarlyStopping(monitor="loss", mode="min", patience=5)
     callbacks_list = [checkpoint, early]
-    model.fit(X_train, y, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=1,
-              validation_split=VALIDATION_SPLIT, shuffle=True,callbacks=callbacks_list)
+    model.fit(X_train, y, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=1,validation_split=VALIDATION_SPLIT, shuffle=True,callbacks=callbacks_list)
     model.load_weights(file_path)
     return model.predict(X_test)
 
@@ -78,7 +77,7 @@ def submit(y_test):
 train = open(train_token_path,encoding='utf-8').readlines()
 test = open(test_token_path,encoding='utf-8').readlines()
 X_train,X_test = get_X_train_X_test(train,test)
-train = pd.read_csv(TRAIN_DATA_FILE)
+train = pd.read_csv(TRAIN_VALID_FILE)
 y = train[CLASSES_LIST].values
 
 y_test = train_fit_predict(get_model(), X_train, X_test, y)

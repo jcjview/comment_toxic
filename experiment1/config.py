@@ -12,6 +12,8 @@ TRAIN_DATA_FILE=path+'train.csv'
 TEST_DATA_FILE=path+'test.csv'
 train_token_path='./train_corps.txt'
 test_token_path='./test_corps.txt'
+TRAIN_VALID_FILE=path+'train_valid_test.csv'
+
 GLOVE_EMBEDDING_FILE=path+'glove.840B.300d.txt'
 
 stop_words = {'the', 'a', 'an'}
