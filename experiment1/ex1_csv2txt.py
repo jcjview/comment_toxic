@@ -23,7 +23,7 @@ N = 0
 all_word = 0
 all_class = 0
 outf = open("./train_corps.txt",'w',encoding='utf-8')
-train = pd.read_csv('data/train_valid.csv')
+train = pd.read_csv(config.TRAIN_VALID_FILE)
 for index, row in train.iterrows():
     line = row['comment_text']
     tokens = nltk.word_tokenize(line)
@@ -53,13 +53,14 @@ outf.close()
 
 
 outf = open("./test_corps.txt",'w',encoding='utf-8')
-train = pd.read_csv("./data/test.csv")
+train = pd.read_csv(config.TEST_DATA_FILE)
 train=train["comment_text"].fillna("MISSINGVALUE").values
 
 for line in train:
     tokens = nltk.word_tokenize(line)
     for t in tokens:
-        word=wnl.lemmatize(t)
+        word = t
+        # word=wnl.lemmatize(t)
         # word = porter.stem(word)
         word = word.lower()
         word = word.replace('\t', '')
