@@ -1,11 +1,10 @@
-# encoding=utf-8
 embedding_dims = 300
-MAX_FEATURES = 72039
+MAX_FEATURES =72039
 MAX_TEXT_LENGTH = 100
 BATCH_SIZE = 32
-EPOCHS = 5
+EPOCHS = 10
 VALIDATION_SPLIT = 0.1
-SPLIT=1000
+SPLIT=10000
 CLASSES_LIST = ["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
 path = '../data/'
 
