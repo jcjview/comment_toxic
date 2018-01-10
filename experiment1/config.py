@@ -1,3 +1,4 @@
+# encoding=utf-8
 embedding_dims = 300
 MAX_FEATURES = 72039
 MAX_TEXT_LENGTH = 100
@@ -22,7 +23,7 @@ stop_words.update(
 
 badwords = {}
 
-with open("../data/badwords.txt") as fp:
+with open("../data/badwords.txt",encoding='utf-8') as fp:
     for line in fp:
         line = line.lower().strip()
         lines = line.split(',')
@@ -31,6 +32,6 @@ with open("../data/badwords.txt") as fp:
         elif len(lines) == 2 and lines[0] not in badwords:
             badwords[lines[0].strip()] = lines[1].strip().replace(" ", "_")
 
-with open("../data/stopwords.txt") as fp:
+with open("../data/stopwords.txt",encoding='utf-8') as fp:
     for line in fp:
         stop_words.add(line.strip())

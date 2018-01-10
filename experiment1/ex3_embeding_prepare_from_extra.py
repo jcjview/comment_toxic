@@ -35,23 +35,6 @@ from config import  *
 # list_sentences_train = train["comment_text"].fillna("_na_").values
 # list_sentences_test = test["comment_text"].fillna("_na_").values
 
-list_sentences_train = open(train_token_path,encoding='utf-8').readlines()
-list_sentences_test = open(test_token_path,encoding='utf-8').readlines()
-print(len(list_sentences_train))
-print(len(list_sentences_test))
-tokenizer = Tokenizer(num_words=MAX_FEATURES)
-tokenizer.fit_on_texts(list(list_sentences_train))
-list_tokenized_train = tokenizer.texts_to_sequences(list_sentences_train)
-list_tokenized_test = tokenizer.texts_to_sequences(list_sentences_test)
-X_t = pad_sequences(list_tokenized_train, maxlen=MAX_TEXT_LENGTH)
-X_te = pad_sequences(list_tokenized_test, maxlen=MAX_TEXT_LENGTH)
-
-word_index = tokenizer.word_index
-def get_coefs(word,*arr):
-    try:
-        return word, np.asarray(arr, dtype='float32')
-    except:
-        return word,np.random.normal(size=(embedding_dims,1))
 
 embeddings_index={}
 #word2vec
@@ -89,31 +72,46 @@ for word in word_index.keys():
         vec=glove_embeddings[word]
         embeddings_index[word]=vec
 """
-def get_coefs(word,*arr):
-    if word in word_index and word not in embeddings_index:
-        try:
-            vector=np.asarray(arr, dtype='float32')
-            if len(arr)==embedding_dims:
-                embeddings_index[word]=vector
-            else:
-                print(vector.shape)
-        except:
-            print('error ',word)
-            #return word,np.random.normal(size=(embedding_dims,1))
-fp=open(GLOVE_EMBEDDING_FILE,encoding='utf-8')
-for o in fp:
-    get_coefs(*o.strip().split())
-fp.close()
-all_embs = np.stack(embeddings_index.values())
-print(all_embs.shape)
-emb_mean,emb_std = all_embs.mean(), all_embs.std()
-nb_words = min(MAX_FEATURES, len(word_index))
-embedding_matrix = np.random.normal(loc=emb_mean,scale=emb_std,size=(nb_words, embedding_dims))
 
-for word, i in word_index.items():
-    if i >= nb_words: continue
-    if word in embeddings_index:
-        embedding_matrix[i] = embeddings_index[word]
+def get_embedding_matrix(word_index):
+    def get_coefs(word, *arr):
+        if word in word_index and word not in embeddings_index:
+            try:
+                vector = np.asarray(arr, dtype='float32')
+                if len(arr) == embedding_dims:
+                    embeddings_index[word] = vector
+                else:
+                    print(vector.shape)
+            except:
+                print('error ', word)
+                # return word,np.random.normal(size=(embedding_dims,1))
+    fp = open(GLOVE_EMBEDDING_FILE, encoding='utf-8')
+    for o in fp:
+        get_coefs(*o.strip().split())
+    fp.close()
+    all_embs = np.stack(embeddings_index.values())
+    print(all_embs.shape)
+    emb_mean, emb_std = all_embs.mean(), all_embs.std()
+    nb_words = min(MAX_FEATURES, len(word_index))
+    embedding_matrix = np.random.normal(loc=emb_mean, scale=emb_std, size=(nb_words, embedding_dims))
 
-np.savez("w2v_embedding_layer1.npz",embedding_matrix)
-print ("save word2vec weights OK")
+    for word, i in word_index.items():
+        if i >= nb_words: continue
+        if word in embeddings_index:
+            embedding_matrix[i] = embeddings_index[word]
+    return embedding_matrix
+if __name__ == '__main__':
+    list_sentences_train = open(train_token_path,encoding='utf-8').readlines()
+    list_sentences_test = open(test_token_path,encoding='utf-8').readlines()
+    print(len(list_sentences_train))
+    print(len(list_sentences_test))
+    tokenizer = Tokenizer(num_words=MAX_FEATURES)
+    tokenizer.fit_on_texts(list(list_sentences_train))
+    list_tokenized_train = tokenizer.texts_to_sequences(list_sentences_train)
+    list_tokenized_test = tokenizer.texts_to_sequences(list_sentences_test)
+    X_t = pad_sequences(list_tokenized_train, maxlen=MAX_TEXT_LENGTH)
+    X_te = pad_sequences(list_tokenized_test, maxlen=MAX_TEXT_LENGTH)
+    embedding_matrix=get_embedding_matrix(tokenizer.word_index)
+    np.savez("w2v_embedding_layer1.npz",embedding_matrix)
+    print ("save word2vec weights OK")
+

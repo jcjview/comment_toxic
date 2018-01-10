@@ -24,6 +24,7 @@ all_word = 0
 all_class = 0
 outf = open("./train_corps.txt",'w',encoding='utf-8')
 train = pd.read_csv(config.TRAIN_VALID_FILE)
+train_len=0
 for index, row in train.iterrows():
     line = row['comment_text']
     tokens = nltk.word_tokenize(line)
@@ -48,14 +49,15 @@ for index, row in train.iterrows():
         if len> maxlen :
             break
     outf.write("\n")
+    train_len+=1
 outf.close()
-
+print('train_len',train_len)
 
 
 outf = open("./test_corps.txt",'w',encoding='utf-8')
 train = pd.read_csv(config.TEST_DATA_FILE)
 train=train["comment_text"].fillna("MISSINGVALUE").values
-
+test_len=0
 for line in train:
     tokens = nltk.word_tokenize(line)
     for t in tokens:
@@ -75,7 +77,9 @@ for line in train:
         outf.write(word)
         outf.write(' ')
     outf.write("\n")
+    test_len+=1
 outf.close()
+print('test_len',test_len)
 #
 # with open('word_dict.pkl3', 'wb') as f:
 #      pickle.dump(word_dict, f)
