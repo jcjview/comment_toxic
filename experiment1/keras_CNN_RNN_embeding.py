@@ -56,6 +56,7 @@ def train_fit_predict(model, X_train, X_test, y):
               validation_data=(valid_x, valid_y), callbacks=callbacks_list)
 
     model.load_weights(file_path)
+    # model.fit(X_train, y, batch_size=BATCH_SIZE, epochs=EPOCHS,  shuffle=True,verbose=0)
     return model.predict(X_test)
 
 def submit(y_test):
@@ -64,23 +65,19 @@ def submit(y_test):
     sample_submission.to_csv("baseline_embeding.csv", index=False)
 
 def get_embedding_matrix(word_index):
-    embeddings_index={}
-    def get_coefs(word,*arr):
-        if word in word_index and word not in embeddings_index:
-            try:
-                vector=np.asarray(arr, dtype='float32')
-                if len(arr)==embedding_dims:
-                    embeddings_index[word]=vector
-                else:
-                    print(vector.shape)
-            except:
-                print('error ',word)
-                #return word,np.random.normal(size=(embedding_dims,1))
-
-    fp=open(GLOVE_EMBEDDING_FILE,encoding='utf-8')
-    for o in fp:
-        get_coefs(*o.strip().split())
-    fp.close()
+    def get_coefs(word, *arr):
+        try:
+            vector=np.asarray(arr, dtype='float32')
+            if len(arr)==embedding_dims:
+                return word, vector
+            else:
+                print('error ', word)
+                return word, np.random.normal(size=(embedding_dims, ))
+        except:
+            # print('error ', word)
+            return word, np.random.normal(size=(embedding_dims, ))
+    with open(GLOVE_EMBEDDING_FILE, encoding='utf-8') as fp:
+        embeddings_index = dict(get_coefs(*o.strip().split()) for o in fp)
     all_embs = np.stack(embeddings_index.values())
     print(all_embs.shape)
     emb_mean,emb_std = all_embs.mean(), all_embs.std()
