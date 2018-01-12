@@ -32,15 +32,15 @@ def get_model(word_index):
         w1 = get_embedding_matrix(word_index)
     embed_size = config.embedding_dims
     inp = Input(shape=(MAX_TEXT_LENGTH, ))
-    embedding_layer = Embedding(MAX_FEATURES, embed_size,weights=[w1])
-    dropout_layer=Dropout(0.2)
-    conv_layer1=Conv1D(filters=32, kernel_size=2, padding='same', activation='relu')
-    maxpooling1= MaxPooling1D(pool_size=2)
-    conv_layer2 = Conv1D(filters=32, kernel_size=2, padding='same', activation='relu')
-    maxpooling2= MaxPooling1D(pool_size=2)
-    gru_layer=GRU(32)
-    softmax=Dense(16, activation="relu")
-    logist=Dense(1, activation="sigmoid")
+    embedding_layer = Embedding(MAX_FEATURES, embed_size,weights=[w1],trainable=True,name="embedding_layer")
+    dropout_layer=Dropout(0.2,name="dropout_layer")
+    conv_layer1=Conv1D(filters=32, kernel_size=2, padding='same', activation='relu',name="conv_layer1")
+    maxpooling1= MaxPooling1D(pool_size=2,name="maxpooling1")
+    conv_layer2 = Conv1D(filters=32, kernel_size=2, padding='same', activation='relu',name="conv_layer2")
+    maxpooling2= MaxPooling1D(pool_size=2,name="maxpooling2")
+    gru_layer=GRU(32,name="gru_layer")
+    softmax=Dense(16, activation="relu",name="softmax")
+    logist=Dense(1, activation="sigmoid",name="logist")
     main=embedding_layer(inp)
     main=dropout_layer(main)
     main=conv_layer1(main)
@@ -50,7 +50,7 @@ def get_model(word_index):
     main=gru_layer(main)
     main=softmax(main)
     main=logist(main)
-    model=Model(input=inp,outputs=main)
+    model=Model(inputs=inp,outputs=main)
     # model = Sequential()
     # model.add(inp)
     # model.add(embedding_layer)
@@ -62,7 +62,7 @@ def get_model(word_index):
     # model.add(gru_layer)
     # model.add(softmax)
     # model.add(logist)
-    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    model.compile(loss='mse', optimizer='adam', metrics=['accuracy'])
     model.summary()
     return model
 
@@ -76,12 +76,25 @@ def train_fit_evaluate(model, X_train, y):
     checkpoint = ModelCheckpoint(file_path, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
     early = EarlyStopping(monitor="val_loss", mode="min", patience=5)
     callbacks_list = [checkpoint, early]
-    model.fit(train_x, train_y, batch_size=BATCH_SIZE, epochs=EPOCHS,  verbose=1,
+    model.fit(train_x, train_y, batch_size=BATCH_SIZE, epochs=3,  verbose=1,
               validation_data=(valid_x, valid_y), callbacks=callbacks_list)
-    model.evaluate(x=test_x,y=test_y,batch_size=1024,verbose=1)
+    score = model.evaluate(x=test_x,y=test_y,batch_size=1024,verbose=1)
+    print('Test loss:', score[0])
+    print('Test accuracy:', score[1])
     #model.load_weights(file_path)
     # model.fit(X_train, y, batch_size=BATCH_SIZE, epochs=EPOCHS,  shuffle=True,verbose=0)
     #return model.predict(X_test,batch_size=1024,verbose=1)
+def evaluate(model, X_train, y):
+    test_x = X_train[0:SPLIT]
+    test_y = y[0:SPLIT]
+    valid_x = X_train[SPLIT:SPLIT2]
+    valid_y = y[SPLIT:SPLIT2]
+    train_x = X_train[SPLIT2:]
+    train_y = y[SPLIT2:]
+    score = model.evaluate(x=test_x, y=test_y, batch_size=1024, verbose=1)
+    print('Test loss:', score[0])
+    print('Test accuracy:', score[1])
+
 def get_embedding_matrix(word_index):
     def get_coefs(values):
         word = ''.join(values[:-300])
@@ -112,5 +125,5 @@ X_train,word_index = get_X_train_X_test(train, test,toxic)
 y = get_Y(toxic)
 
 train_fit_evaluate(get_model(word_index), X_train, y)
-
+#evaluate(get_model(word_index), X_train, y)
 # submit(y_test)
