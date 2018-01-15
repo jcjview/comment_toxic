@@ -5,7 +5,7 @@ from keras.layers import Dense, Embedding, Input
 from keras.layers import GRU, Dropout, MaxPooling1D, Conv1D
 from keras.preprocessing import text, sequence
 from keras.callbacks import EarlyStopping, ModelCheckpoint
-
+import pickle
 import config
 from config import *
 
@@ -28,7 +28,6 @@ def get_model(w1):
     embed_size = config.embedding_dims
     inp = Input(shape=(MAX_TEXT_LENGTH, ))
     embedding_layer = Embedding(MAX_FEATURES, embed_size)
-    embedding_layer.set_weights([w1])
     main = embedding_layer(inp)
     main = Dropout(0.2)(main)
     main = Conv1D(filters=32, kernel_size=2, padding='same', activation='relu')(main)
@@ -41,6 +40,7 @@ def get_model(w1):
     model = Model(inputs=inp, outputs=main)
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
     model.summary()
+    embedding_layer.set_weights([w1])
     return model
 
 def train_fit_predict(model, X_train, X_test, y,label):
@@ -60,8 +60,12 @@ def train_fit_predict(model, X_train, X_test, y,label):
     return model.predict(X_test)
 
 def submit(y_test):
+
+    # with open('y_test.pkl3', 'wb') as f:
+    #      pickle.dump(y_test, f)
     sample_submission = pd.read_csv(config.path+"sample_submission.csv")
-    sample_submission[CLASSES_LIST] = y_test
+    for label in CLASSES_LIST:
+        sample_submission[label] = y_test[label]
     sample_submission.to_csv("baseline_embeding.csv", index=False)
 
 def get_embedding_matrix(word_index):
@@ -90,6 +94,13 @@ def get_embedding_matrix(word_index):
             embedding_matrix[i] = embeddings_index[word]
     print(len(embedding_matrix))
     return embedding_matrix
+
+# with open('y_test.pkl3', 'rb') as pickle_file:
+#     y_test = pickle.load(pickle_file)
+#     submit(y_test)
+#
+# # print(y_test)
+# exit(-1)
 train = pd.read_csv(config.TRAIN_VALID_FILE)
 test = pd.read_csv(config.TEST_DATA_FILE)
 
