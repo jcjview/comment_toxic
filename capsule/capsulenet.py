@@ -41,8 +41,12 @@ def CapsNet(input_shape, n_class, routings):
     :return: Two Keras Models, the first one used for training, and the second one for evaluation.
             `eval_model` can also be used for training.
     """
+    print(input_shape)
+    print(n_class)
     input_shape=(config.MAX_TEXT_LENGTH,)
     n_class=6
+    print(input_shape)
+    print(n_class)
     x = layers.Input(shape=(config.MAX_TEXT_LENGTH,))
     x1 = layers.Embedding(config.MAX_FEATURES,
                          config.embedding_dims,
@@ -50,21 +54,21 @@ def CapsNet(input_shape, n_class, routings):
                                 # weights=[embedding_matrix],
                                 trainable=True)(x)
     x1 = layers.Dropout(0.2)(x1)
-    x1=Reshape((config.MAX_TEXT_LENGTH,300,1))(x1)
+    x1=Reshape((config.MAX_TEXT_LENGTH,-1,1))(x1)
     # Layer 1: Just a conventional Conv2D layer
-    conv1 = layers.Conv2D(filters=256, kernel_size=9, strides=1, padding='valid', activation='relu', name='conv1',input_shape=(config.MAX_TEXT_LENGTH, 300,1))(x1)
+    conv1 = layers.Conv2D(filters=256, kernel_size=9, strides=1, padding='valid', activation='relu', name='conv1')(x1)
 
     # Layer 2: Conv2D layer with `squash` activation, then reshape to [None, num_capsule, dim_capsule]
-    primarycaps = PrimaryCap(conv1, dim_capsule=8, n_channels=32, kernel_size=9, strides=2, padding='valid',)
+    primarycaps = PrimaryCap(conv1, dim_capsule=8, n_channels=32, kernel_size=9, strides=2, padding='valid')
 
     # Layer 3: Capsule layer. Routing algorithm works here.
     digitcaps = CapsuleLayer(num_capsule=n_class, dim_capsule=16, routings=routings,
                              name='digitcaps')(primarycaps)
-
+    # lr=layers.Dense(n_class, activation="sigmoid", name='softmax')(digitcaps)
     # Layer 4: This is an auxiliary layer to replace each capsule with its length. Just to match the true label's shape.
     # If using tensorflow, this will not be necessary. :)
     out_caps = Length(name='capsnet')(digitcaps)
-    out_caps = layers.Dense(n_class, activation="sigmoid", name='softmax')(out_caps)
+    # out_caps = layers.Dense(n_class, activation="sigmoid", name='softmax')(out_caps)
 
 
     # Decoder network.
@@ -286,8 +290,8 @@ if __name__ == "__main__":
     (x_train, y_train), (x_val, y_val),test_data = load_mnist()
 
     # define model
-    model, eval_model, manipulate_model = CapsNet(input_shape=(config.MAX_TEXT_LENGTH, ),
-                                                  n_class=len(config.CLASSES_LIST),
+    model, eval_model, manipulate_model = CapsNet(input_shape=x_train.shape[1:],
+                                                  n_class=len(np.unique(np.argmax(y_train, 1))),
                                                   routings=args.routings)
     model.summary()
 
