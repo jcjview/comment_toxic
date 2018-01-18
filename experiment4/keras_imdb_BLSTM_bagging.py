@@ -222,20 +222,30 @@ def get_Y(train):
 
 
 ########################################################################################################################################################
-def multi_log_loss(y_true: np.array, y_pred: np.array):  # score function for CV
+def mlogloss(true_label, predicted, eps=1e-15):
+  p = np.clip(predicted, eps, 1 - eps)
+  if true_label == 1:
+    return -np.log2(p)
+  else:
+    return -np.log2(1 - p)
+
+def multi_log_loss(y_true, y_pred):  # score function for CV
     # Handle all zeroes
-    all_zeros = np.all(y_pred == 0, axis=1)
-    y_pred[all_zeros] = 1e-10
-    # Normalise sum of row probabilities to one
-    row_sums = np.sum(y_pred, axis=1)
-    y_pred /= row_sums.reshape((-1, 1))
-    # Calculate score
-    n_rows = y_true.size
-    # y_true = y_true - 1  # classes start from 1 where columns start from zero
+    print('y_true',y_true.shape)
+    print('y_pred',y_pred.shape)
+
+    y_true = y_true.flatten()
+    y_pred = y_pred.flatten()
+    print('y_true',y_true.shape)
+    print('y_pred',y_pred.shape)
+
+    n_rows = len(y_true)
     score_sum = 0
-    for i in range(y_true.size):
-        score_sum -= np.log(y_pred[i, y_true[i]])
+    for i in range(n_rows):
+        score_sum +=mlogloss(y_true[i],y_pred[i])
     score = score_sum / n_rows
+    print('n_rows',n_rows)
+
     return score
 
 
@@ -255,8 +265,8 @@ if __name__ == '__main__':
 
     ## train models
     i = 0
-    nbags = 1
-    nepochs = 4
+    nbags = 5
+    nepochs = 5
     pred_oob = np.zeros(y.shape)
     pred_test = np.zeros(shape=(X_test.shape[0], 6))
     print('pred_oob', pred_oob.shape)
@@ -276,11 +286,15 @@ if __name__ == '__main__':
             bst_model_path = STAMP + '.h5'
             model_checkpoint = ModelCheckpoint(bst_model_path, save_best_only=True, verbose=1, save_weights_only=True)
             model = get_model(embedding_matrix)
-            fit = model.fit(xtr, ytr, batch_size=256, epochs=4, verbose=1, callbacks=[early_stopping, model_checkpoint],
+            fit = model.fit(xtr, ytr, batch_size=256, epochs=5, verbose=0, callbacks=[early_stopping, model_checkpoint],
                             validation_data=(xte, yte))
-            # pred+=model.predict(xte,1024,verbose=1)
-            # score = log_loss(yte, pred)
-            # print('%d score'%j,score)
+            model.load_weights(bst_model_path)
+            pred_temp=model.predict(xte,1024,verbose=1)
+            pred+=pred_temp
+            score = log_loss(yte, pred_temp)/6
+            score1 = multi_log_loss(yte, pred_temp)
+            print('%d score'%j,score)
+            print('%d score1' % j, score1)
             pred_test += model.predict(X_test, 1024, verbose=1)
             # fit = model.fit_generator(generator=batch_generator(xtr, ytr, 128, True),
             #                           nb_epoch=nepochs,
@@ -295,14 +309,15 @@ if __name__ == '__main__':
             #                                     verbose = 1)
         pred /= nbags
         pred_oob[inTe] = pred
-        score = log_loss(yte, pred)
+        score = log_loss(yte, pred)/6
         score1 = multi_log_loss(yte, pred)
         i += 1
         print('Fold ', i, '- log_loss:', score)
         print('Fold ', i, '- log_loss:', score1)
-    total_score = log_loss(y, pred_oob)
+    total_score = log_loss(y, pred_oob)/6
+    total_score1 = multi_log_loss(y, pred_oob)
     print('Total - log_loss:', total_score)
-
+    print('Total - log_loss:', total_score1)
     ## test predictions
     pred_test /= (nfolds * nbags)
     submit(pred_test, total_score, kernel_name)
