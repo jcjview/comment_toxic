@@ -20,39 +20,41 @@ from config import *
 from util import preprocessing
 
 
-class roc_callback(Callback):
-    def __init__(self,training_data,validation_data):
-        self.x = training_data[0]
-        self.y = training_data[1]
-        self.x_val = validation_data[0]
-        self.y_val = validation_data[1]
-
-
-    def on_train_begin(self, logs={}):
-        return
-
-    def on_train_end(self, logs={}):
-        return
-
-    def on_epoch_begin(self, epoch, logs={}):
-        return
-
-    def on_epoch_end(self, epoch, logs={}):
-        y_pred = self.model.predict(self.x)
-        roc = roc_auc_score(self.y, y_pred)
-        y_pred_val = self.model.predict(self.x_val)
-        roc_val = roc_auc_score(self.y_val, y_pred_val)
-        print('\rroc-auc: %s - roc-auc_val: %s' % (str(round(roc,4)),str(round(roc_val,4))),end=100*' '+'\n')
-
-        return
+class RocAucMetricCallback(Callback):
+    def __init__(self, predict_batch_size=1024, include_on_batch=False):
+        super(RocAucMetricCallback, self).__init__()
+        self.predict_batch_size = predict_batch_size
+        self.include_on_batch = include_on_batch
 
     def on_batch_begin(self, batch, logs={}):
-        return
+        pass
 
     def on_batch_end(self, batch, logs={}):
-        return
+        if (self.include_on_batch):
+            logs['roc_auc_val'] = float('-inf')
+            if (self.validation_data):
+                logs['roc_auc_val'] = roc_auc_score(self.validation_data[1],
+                                                    self.model.predict(self.validation_data[0],
+                                                                       batch_size=self.predict_batch_size))
 
-########################################
+    def on_train_begin(self, logs={}):
+        if not ('roc_auc_val' in self.params['metrics']):
+            self.params['metrics'].append('roc_auc_val')
+
+    def on_train_end(self, logs={}):
+        pass
+
+    def on_epoch_begin(self, epoch, logs={}):
+        pass
+
+    def on_epoch_end(self, epoch, logs={}):
+        logs['roc_auc_val'] = float('-inf')
+        if (self.validation_data):
+            logs['roc_auc_val'] = roc_auc_score(self.validation_data[1],
+                                                self.model.predict(self.validation_data[0],
+                                                                   batch_size=self.predict_batch_size))
+
+        ########################################
 ## set directories and parameters
 ########################################
 
@@ -87,7 +89,7 @@ def get_model(embedding_matrix):
     model = Model(inputs=[comment_input],
                   outputs=preds)
     model.compile(loss='binary_crossentropy',
-                  optimizer='rmsprop',
+                  optimizer='adam',
                   metrics=['accuracy'])
     model.summary()
     return model
@@ -110,15 +112,15 @@ def train_fit_predict(model, data,test_data,y):
 
     STAMP =kernel_name+ '_%d_%.2f' % (dense_size, rate_drop_dense)
     print(STAMP)
-    early_stopping = EarlyStopping(monitor='val_loss', patience=5)
+    early_stopping = EarlyStopping(monitor='roc_auc_val', patience=5,mode='max')
     bst_model_path = STAMP + '.h5'
-    model_checkpoint = ModelCheckpoint(bst_model_path, save_best_only=True,verbose=1,  save_weights_only=True)
+    model_checkpoint = ModelCheckpoint(bst_model_path,monitor= 'roc_auc_val',mode='max',
+                                       save_best_only=True,verbose=1,  save_weights_only=True)
 
     hist = model.fit(data_train, labels_train,
                      validation_data=(data_val, labels_val),
                      epochs=50, batch_size=256, shuffle=True,
-                     callbacks=[roc_callback(training_data=(data_train, labels_train),validation_data=(data_val, labels_val)),
-                                           early_stopping, model_checkpoint])
+                     callbacks=[RocAucMetricCallback(),early_stopping, model_checkpoint])
 
     model.load_weights(bst_model_path)
     bst_val_score = min(hist.history['val_loss'])
