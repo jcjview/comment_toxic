@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 # from keras import initializations
 from keras.callbacks import EarlyStopping, ModelCheckpoint, Callback
-from keras.layers import Dense, Input, LSTM, Embedding, Dropout, Conv1D, MaxPooling1D, Flatten
+from keras.layers import Dense, Input, LSTM, Embedding, Dropout, Conv1D, MaxPooling1D, Flatten,GlobalMaxPooling1D
 from keras.layers.normalization import BatchNormalization
 from keras.models import Model
 from sklearn.metrics import roc_auc_score
@@ -78,11 +78,12 @@ def get_model(embedding_matrix):
                                 input_length=MAX_TEXT_LENGTH,
                                 trainable=False)
     embedded_sequences = embedding_layer(comment_input)
+    embedded_sequences=Dropout(rate_drop_dense)(embedded_sequences)
     main = Conv1D(filters=cnn_filters, kernel_size=kernel_size,
                   padding='same', activation='relu')(embedded_sequences)
-    main = MaxPooling1D(pool_size=6)(main)
-    # main=GlobalMaxPooling1D()(main)
-    main = Flatten()(main)
+    #main = MaxPooling1D(pool_size=6)(main)
+    main=GlobalMaxPooling1D()(main)
+    #main = Flatten()(main)
     main = Dense(dense_size, activation="relu")(main)
     main=Dropout(rate_drop_dense)(main)
     preds = Dense(6, activation='sigmoid',name='logist')(main)
@@ -123,8 +124,8 @@ def train_fit_predict(model, data,test_data,y):
                      callbacks=[RocAucMetricCallback(),early_stopping, model_checkpoint])
 
     model.load_weights(bst_model_path)
-    bst_val_score = min(hist.history['val_loss'])
-    print("bst_val_score",bst_val_score)
+    bst_val_score = max(hist.history['roc_auc_val'])
+    print("bst_roc_score",bst_val_score)
     ## make the submission
     print('Start making the submission before fine-tuning')
     y_test = model.predict(test_data, batch_size=1024, verbose=1)
