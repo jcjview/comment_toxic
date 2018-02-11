@@ -24,7 +24,12 @@ def get_num_lines(file_path):
 TRAIN_HDF5 = './train_hdf5.h5'
 word_index_path='./word_index.pkl'
 
-
+wiki_reg=r'https?://en.wikipedia.org/[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]'
+url_reg=r'https?://[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]'
+ip_reg='\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'
+WIKI_LINK=' WIKI_LINK '
+URL_LINK=' URL_LINK '
+IP_LINK=' IP_LINK '
 
 def dump_X_Y_train_test(train, test, y,word_index):
     print('save to h5 ',TRAIN_HDF5)
@@ -53,19 +58,20 @@ def get_X_train_X_test(train_df, test_df):
     list_classes = ["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
     y = train_df[list_classes].values
     list_sentences_test = test_df["comment_text"].fillna("NA").values
+    print('Processing new')
 
-    with open('text.txt','w',encoding='utf-8') as fp:
-         # for c in comments:
-        fp.write("\n".join(list_sentences_train))
-        fp.write("\n".join(list_sentences_test))
     comments = []
     for text in tqdm(list_sentences_train):
         comments.append(text_to_wordlist(text))
     test_comments = []
-    print('Processing test dataset')
+
     for text in tqdm(list_sentences_test):
         test_comments.append(text_to_wordlist(text))
 
+    with open('text.txt','w',encoding='utf-8') as fp:
+         # for c in comments:
+        fp.write("\n".join(comments))
+        fp.write("\n".join(test_comments))
     tokenizer = Tokenizer(num_words=MAX_FEATURES)
     tokenizer.fit_on_texts(comments + test_comments)
 
@@ -86,16 +92,30 @@ def get_X_train_X_test(train_df, test_df):
     return data, test_data, tokenizer.word_index
 
 # Regex to remove all Non-Alpha Numeric and space
-special_character_removal = re.compile(r'[^a-z\d ]', re.IGNORECASE)
+special_character_removal = re.compile(r'[^A-Za-z\d!? ]', re.IGNORECASE)
 # regex to replace all numerics
 replace_numbers = re.compile(r'\d+', re.IGNORECASE)
 
 def text_to_wordlist(text, remove_stopwords=False, stem_words=False):
     # Clean the text, with the option to remove stopwords and to stem words.
 
-    # Convert words to lower case and split them
-    text = text.lower().split()
+    #clear link
+    c = re.findall(wiki_reg, text)
+    for u in c:
+        text = text.replace(u, WIKI_LINK)
+    c = re.findall(url_reg, text)
+    for u in c:
+        text = text.replace(u, WIKI_LINK)
+    c = re.findall(wiki_reg, text)
+    for u in c:
+        text = text.replace(u, URL_LINK)
+    c = re.findall(ip_reg, text)
+    for u in c:
+        text = text.replace(u, IP_LINK)
 
+    # Convert words to lower case and split them
+    # text = text.lower().split()
+    text = text.split()
     # Optionally, remove stop words
     if remove_stopwords:
         stops = set(stopwords.words("english"))

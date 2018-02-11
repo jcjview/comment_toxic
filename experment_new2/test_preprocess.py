@@ -22,9 +22,9 @@ if __name__ == '__main__':
 
     preprocessing.dump_X_Y_train_test(X_train, X_test, y, word_index)
     X_train, X_test, y, word_index=preprocessing.load_train_test_y()
-    # embedding_matrix1=np.load(embedding_matrix_path)
+    embedding_matrix1=np.load(embedding_matrix_path)
     print(X_train.shape)
     print(X_test.shape)
     print(y.shape)
     print(len(word_index))
-    # print(embedding_matrix1.shape)
+    print(embedding_matrix1.shape)
