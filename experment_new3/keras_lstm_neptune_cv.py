@@ -12,10 +12,11 @@ import numpy as np
 import pandas as pd
 # from keras import initializations
 from keras.callbacks import EarlyStopping, ModelCheckpoint, Callback
+from keras.optimizers import Adam
 from sklearn.metrics import roc_auc_score, confusion_matrix
 
 from config import *
-from models import dpcnn
+from models import lstm
 from util import preprocessing
 
 
@@ -68,31 +69,33 @@ def get_model(embedding_matrix):
     embedding_size=embedding_dims
     maxlen=MAX_TEXT_LENGTH
     max_features=MAX_FEATURES
-    filter_nr=64
+
+    unit_nr=64
     kernel_size=3
     repeat_block=2
     dense_size=256
-    repeat_dense=1
-    trainable_embedding=True
+    repeat_dense=2
+    trainable_embedding=False
     global_pooling= 1
     log_reg_c= 4.0
     log_reg_penalty= 'l2'
     # Regularization
-    use_batch_norm= False
     # value: [0,1]
     l2_reg_convo= 0.0001
     l2_reg_dense= 0.0
     dropout_lstm= 0.2
     dropout_convo= 0.1
-    dropout_dense= 0.25
+    dropout_dense= 0.5
     use_prelu= True
-    model= dpcnn(embedding_matrix, embedding_size,
-          maxlen, max_features,
-          filter_nr, kernel_size, repeat_block, dropout_convo,
-          dense_size, repeat_dense, dropout_dense,
-          l2_reg_convo, l2_reg_dense, use_prelu,
-          trainable_embedding, use_batch_norm)
-    model.compile(loss='binary_crossentropy', optimizer='sgd', metrics=['accuracy'])
+    use_batch_norm= True
+
+    lr= 0.01
+    model= lstm(embedding_matrix, embedding_size,
+         maxlen, max_features,
+         unit_nr, repeat_block, dropout_lstm,
+         dense_size, repeat_dense, dropout_dense,
+         l2_reg_dense, use_prelu, use_batch_norm, trainable_embedding, global_pooling)
+    model.compile(loss='binary_crossentropy', optimizer=Adam(lr=lr), metrics=['accuracy'])
     model.summary()
 
     return model
@@ -112,11 +115,12 @@ def train_fit_predict(model, data_train,labels_train,data_val,labels_val,
     bst_model_path = STAMP + '.h5'
     model_checkpoint = ModelCheckpoint(bst_model_path,monitor= 'roc_auc_val',mode='max',
                                        save_best_only=True,verbose=1,  save_weights_only=True)
-
+    from keras.callbacks import CSVLogger
+    csv_logger = CSVLogger('./log/' + STAMP + 'log.csv', append=True, separator=';')
     hist = model.fit(data_train, labels_train,
                      validation_data=(data_val, labels_val),
                      epochs=50, batch_size=256, shuffle=True,
-                     callbacks=[RocAucMetricCallback(),early_stopping, model_checkpoint])
+                     callbacks=[RocAucMetricCallback(),early_stopping, model_checkpoint,csv_logger])
 
     model.load_weights(bst_model_path)
     bst_val_score = max(hist.history['roc_auc_val'])
@@ -147,7 +151,6 @@ print(embedding_matrix1.shape)
 seed = 1
 np.random.seed(seed)
 cv_folds=6
-
 from sklearn.model_selection import StratifiedKFold
 skf = StratifiedKFold(n_splits=cv_folds, random_state=seed, shuffle=False)
 count=0
@@ -201,7 +204,7 @@ f1=2*acc*recall/(acc+recall)
 print('acc',acc)
 print('recall',recall)
 print('f1',f1)
-error_vak_path = kernel_name + '_error.txt'
+error_vak_path = './log/'+kernel_name + '_error.txt'
 with open(error_vak_path,'w') as filepoint:
     for i in range(6):
         filepoint.write('{} {} {} {} {}\n'.format(CLASSES_LIST[i], tn[i], fp[i], fn[i], tp[i]))
