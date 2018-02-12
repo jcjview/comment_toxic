@@ -17,162 +17,162 @@ from keras.layers.merge import add
 from keras.models import Model
 from keras.optimizers import SGD, Adam, Adagrad, Adadelta
 
-from steps.keras.callbacks import NeptuneMonitor, ReduceLR
-from steps.keras.models import ClassifierXY
-from steps.utils import create_filepath
+# from steps.keras.callbacks import NeptuneMonitor, ReduceLR
+# from steps.keras.models import ClassifierXY
+# from steps.utils import create_filepath
 
 
-class CharacterClassifier(ClassifierXY):
-    def _build_optimizer(self, **kwargs):
-        return SGD(**kwargs)
-
-    def _build_loss(self, **kwargs):
-        return 'binary_crossentropy'
-
-    def _create_callbacks(self, **kwargs):
-        lr_scheduler = ReduceLR(**kwargs['lr_scheduler'])
-        early_stopping = EarlyStopping(**kwargs['early_stopping'])
-        checkpoint_filepath = kwargs['model_checkpoint']['filepath']
-        create_filepath(checkpoint_filepath)
-        model_checkpoint = ModelCheckpoint(**kwargs['model_checkpoint'])
-        neptune = NeptuneMonitor()
-        return [neptune, lr_scheduler, early_stopping, model_checkpoint]
-
-
-class CharVDCNN(CharacterClassifier):
-    def _build_optimizer(self, **kwargs):
-        return SGD(**kwargs)
-
-    def _build_model(self, embedding_size,
-                     maxlen, max_features,
-                     filter_nr, kernel_size, repeat_block, dropout_convo,
-                     dense_size, repeat_dense, dropout_dense,
-                     l2_reg_convo, l2_reg_dense, use_prelu, use_batch_norm):
-        return vdcnn(embedding_size,
-                     maxlen, max_features,
-                     filter_nr, kernel_size, repeat_block, dropout_convo,
-                     dense_size, repeat_dense, dropout_dense,
-                     l2_reg_convo, l2_reg_dense, use_prelu, use_batch_norm)
+# class CharacterClassifier(ClassifierXY):
+#     def _build_optimizer(self, **kwargs):
+#         return SGD(**kwargs)
+#
+#     def _build_loss(self, **kwargs):
+#         return 'binary_crossentropy'
+#
+#     def _create_callbacks(self, **kwargs):
+#         lr_scheduler = ReduceLR(**kwargs['lr_scheduler'])
+#         early_stopping = EarlyStopping(**kwargs['early_stopping'])
+#         checkpoint_filepath = kwargs['model_checkpoint']['filepath']
+#         create_filepath(checkpoint_filepath)
+#         model_checkpoint = ModelCheckpoint(**kwargs['model_checkpoint'])
+#         neptune = NeptuneMonitor()
+#         return [neptune, lr_scheduler, early_stopping, model_checkpoint]
 
 
-class WordLSTM(CharacterClassifier):
-    def _build_optimizer(self, **kwargs):
-        return Adam(kwargs['lr'])
-
-    def _build_model(self, embedding_size,
-                     maxlen, max_features,
-                     unit_nr, repeat_block, dropout_lstm,
-                     dense_size, repeat_dense, dropout_dense,
-                     l2_reg_dense, use_prelu, use_batch_norm, global_pooling):
-        return lstm(None, embedding_size,
-                    maxlen, max_features,
-                    unit_nr, repeat_block, dropout_lstm,
-                    dense_size, repeat_dense, dropout_dense,
-                    l2_reg_dense, use_prelu, use_batch_norm, False, global_pooling)
-
-
-class WordDPCNN(CharacterClassifier):
-    def _build_optimizer(self, **kwargs):
-        return SGD(**kwargs)
-
-    def _build_model(self, embedding_size,
-                     maxlen, max_features,
-                     filter_nr, kernel_size, repeat_block, dropout_convo,
-                     dense_size, repeat_dense, dropout_dense,
-                     l2_reg_convo, l2_reg_dense, use_prelu, trainable_embedding, use_batch_norm):
-        """
-        Implementation of http://ai.tencent.com/ailab/media/publications/ACL3-Brady.pdf
-        """
-        return dpcnn(None, embedding_size,
-                     maxlen, max_features,
-                     filter_nr, kernel_size, repeat_block, dropout_convo,
-                     dense_size, repeat_dense, dropout_dense,
-                     l2_reg_convo, l2_reg_dense, use_prelu, trainable_embedding, use_batch_norm)
+# class CharVDCNN(CharacterClassifier):
+#     def _build_optimizer(self, **kwargs):
+#         return SGD(**kwargs)
+#
+#     def _build_model(self, embedding_size,
+#                      maxlen, max_features,
+#                      filter_nr, kernel_size, repeat_block, dropout_convo,
+#                      dense_size, repeat_dense, dropout_dense,
+#                      l2_reg_convo, l2_reg_dense, use_prelu, use_batch_norm):
+#         return vdcnn(embedding_size,
+#                      maxlen, max_features,
+#                      filter_nr, kernel_size, repeat_block, dropout_convo,
+#                      dense_size, repeat_dense, dropout_dense,
+#                      l2_reg_convo, l2_reg_dense, use_prelu, use_batch_norm)
 
 
-class GloveBasic(CharacterClassifier):
-    def fit(self, embedding_matrix, X, y, validation_data):
-        X_valid, y_valid = validation_data
-        self.callbacks = self._create_callbacks(**self.callbacks_config)
-        self.architecture_config['model_params']['embedding_matrix'] = embedding_matrix
-        self.model = self._compile_model(**self.architecture_config)
-        self.model.fit(X, y,
-                       validation_data=[X_valid, y_valid],
-                       callbacks=self.callbacks,
-                       verbose=1,
-                       **self.training_config)
-        return self
-
-    def transform(self, embedding_matrix, X, y=None, validation_data=None):
-        predictions = self.model.predict(X, verbose=1)
-        return {'prediction_probability': predictions}
+# class WordLSTM(CharacterClassifier):
+#     def _build_optimizer(self, **kwargs):
+#         return Adam(kwargs['lr'])
+#
+#     def _build_model(self, embedding_size,
+#                      maxlen, max_features,
+#                      unit_nr, repeat_block, dropout_lstm,
+#                      dense_size, repeat_dense, dropout_dense,
+#                      l2_reg_dense, use_prelu, use_batch_norm, global_pooling):
+#         return lstm(None, embedding_size,
+#                     maxlen, max_features,
+#                     unit_nr, repeat_block, dropout_lstm,
+#                     dense_size, repeat_dense, dropout_dense,
+#                     l2_reg_dense, use_prelu, use_batch_norm, False, global_pooling)
 
 
-class GloveLSTM(GloveBasic):
-    def _build_optimizer(self, **kwargs):
-        return Adam(kwargs['lr'])
-
-    def _build_model(self, embedding_matrix, embedding_size,
-                     maxlen, max_features,
-                     unit_nr, repeat_block, dropout_lstm,
-                     dense_size, repeat_dense, dropout_dense,
-                     l2_reg_dense, use_prelu, use_batch_norm, trainable_embedding, global_pooling):
-        return lstm(embedding_matrix, embedding_size,
-                    maxlen, max_features,
-                    unit_nr, repeat_block, dropout_lstm,
-                    dense_size, repeat_dense, dropout_dense,
-                    l2_reg_dense, use_prelu, use_batch_norm, trainable_embedding, global_pooling)
-
-
-class GloveSCNN(GloveBasic):
-    def _build_optimizer(self, **kwargs):
-        return SGD(**kwargs)
-
-    def _build_model(self, embedding_matrix, embedding_size,
-                     maxlen, max_features,
-                     filter_nr, kernel_size, dropout_convo,
-                     dense_size, repeat_dense, dropout_dense,
-                     l2_reg_convo, l2_reg_dense, use_prelu, trainable_embedding, use_batch_norm):
-        return scnn(embedding_matrix, embedding_size,
-                    maxlen, max_features,
-                    filter_nr, kernel_size, dropout_convo,
-                    dense_size, repeat_dense, dropout_dense,
-                    l2_reg_convo, l2_reg_dense, use_prelu, trainable_embedding, use_batch_norm)
+# class WordDPCNN(CharacterClassifier):
+#     def _build_optimizer(self, **kwargs):
+#         return SGD(**kwargs)
+#
+#     def _build_model(self, embedding_size,
+#                      maxlen, max_features,
+#                      filter_nr, kernel_size, repeat_block, dropout_convo,
+#                      dense_size, repeat_dense, dropout_dense,
+#                      l2_reg_convo, l2_reg_dense, use_prelu, trainable_embedding, use_batch_norm):
+#         """
+#         Implementation of http://ai.tencent.com/ailab/media/publications/ACL3-Brady.pdf
+#         """
+#         return dpcnn(None, embedding_size,
+#                      maxlen, max_features,
+#                      filter_nr, kernel_size, repeat_block, dropout_convo,
+#                      dense_size, repeat_dense, dropout_dense,
+#                      l2_reg_convo, l2_reg_dense, use_prelu, trainable_embedding, use_batch_norm)
 
 
-class GloveDPCNN(GloveBasic):
-    def _build_optimizer(self, **kwargs):
-        return SGD(**kwargs)
+# class GloveBasic(CharacterClassifier):
+#     def fit(self, embedding_matrix, X, y, validation_data):
+#         X_valid, y_valid = validation_data
+#         self.callbacks = self._create_callbacks(**self.callbacks_config)
+#         self.architecture_config['model_params']['embedding_matrix'] = embedding_matrix
+#         self.model = self._compile_model(**self.architecture_config)
+#         self.model.fit(X, y,
+#                        validation_data=[X_valid, y_valid],
+#                        callbacks=self.callbacks,
+#                        verbose=1,
+#                        **self.training_config)
+#         return self
+#
+#     def transform(self, embedding_matrix, X, y=None, validation_data=None):
+#         predictions = self.model.predict(X, verbose=1)
+#         return {'prediction_probability': predictions}
 
-    def _build_model(self, embedding_matrix, embedding_size,
-                     maxlen, max_features,
-                     filter_nr, kernel_size, repeat_block, dropout_convo,
-                     dense_size, repeat_dense, dropout_dense,
-                     l2_reg_convo, l2_reg_dense, use_prelu, trainable_embedding, use_batch_norm):
-        """
-        Implementation of http://ai.tencent.com/ailab/media/publications/ACL3-Brady.pdf
-        """
-        return dpcnn(embedding_matrix, embedding_size,
-                     maxlen, max_features,
-                     filter_nr, kernel_size, repeat_block, dropout_convo,
-                     dense_size, repeat_dense, dropout_dense,
-                     l2_reg_convo, l2_reg_dense, use_prelu, trainable_embedding, use_batch_norm)
 
-
-class GloveCuDNNGRU(GloveBasic):
-    def _build_optimizer(self, **kwargs):
-        return Adam(kwargs['lr'])
-
-    def _build_model(self, embedding_matrix, embedding_size,
-                     maxlen, max_features,
-                     unit_nr, repeat_block, dropout_lstm,
-                     dense_size, repeat_dense, dropout_dense,
-                     l2_reg_dense, use_prelu, use_batch_norm, trainable_embedding, global_pooling):
-        return cudnn_gru(embedding_matrix, embedding_size,
-                         maxlen, max_features,
-                         unit_nr, repeat_block,
-                         dense_size, repeat_dense, dropout_dense,
-                         l2_reg_dense, use_prelu, use_batch_norm, trainable_embedding, global_pooling)
+# class GloveLSTM(GloveBasic):
+#     def _build_optimizer(self, **kwargs):
+#         return Adam(kwargs['lr'])
+#
+#     def _build_model(self, embedding_matrix, embedding_size,
+#                      maxlen, max_features,
+#                      unit_nr, repeat_block, dropout_lstm,
+#                      dense_size, repeat_dense, dropout_dense,
+#                      l2_reg_dense, use_prelu, use_batch_norm, trainable_embedding, global_pooling):
+#         return lstm(embedding_matrix, embedding_size,
+#                     maxlen, max_features,
+#                     unit_nr, repeat_block, dropout_lstm,
+#                     dense_size, repeat_dense, dropout_dense,
+#                     l2_reg_dense, use_prelu, use_batch_norm, trainable_embedding, global_pooling)
+#
+#
+# class GloveSCNN(GloveBasic):
+#     def _build_optimizer(self, **kwargs):
+#         return SGD(**kwargs)
+#
+#     def _build_model(self, embedding_matrix, embedding_size,
+#                      maxlen, max_features,
+#                      filter_nr, kernel_size, dropout_convo,
+#                      dense_size, repeat_dense, dropout_dense,
+#                      l2_reg_convo, l2_reg_dense, use_prelu, trainable_embedding, use_batch_norm):
+#         return scnn(embedding_matrix, embedding_size,
+#                     maxlen, max_features,
+#                     filter_nr, kernel_size, dropout_convo,
+#                     dense_size, repeat_dense, dropout_dense,
+#                     l2_reg_convo, l2_reg_dense, use_prelu, trainable_embedding, use_batch_norm)
+#
+#
+# class GloveDPCNN(GloveBasic):
+#     def _build_optimizer(self, **kwargs):
+#         return SGD(**kwargs)
+#
+#     def _build_model(self, embedding_matrix, embedding_size,
+#                      maxlen, max_features,
+#                      filter_nr, kernel_size, repeat_block, dropout_convo,
+#                      dense_size, repeat_dense, dropout_dense,
+#                      l2_reg_convo, l2_reg_dense, use_prelu, trainable_embedding, use_batch_norm):
+#         """
+#         Implementation of http://ai.tencent.com/ailab/media/publications/ACL3-Brady.pdf
+#         """
+#         return dpcnn(embedding_matrix, embedding_size,
+#                      maxlen, max_features,
+#                      filter_nr, kernel_size, repeat_block, dropout_convo,
+#                      dense_size, repeat_dense, dropout_dense,
+#                      l2_reg_convo, l2_reg_dense, use_prelu, trainable_embedding, use_batch_norm)
+#
+#
+# class GloveCuDNNGRU(GloveBasic):
+#     def _build_optimizer(self, **kwargs):
+#         return Adam(kwargs['lr'])
+#
+#     def _build_model(self, embedding_matrix, embedding_size,
+#                      maxlen, max_features,
+#                      unit_nr, repeat_block, dropout_lstm,
+#                      dense_size, repeat_dense, dropout_dense,
+#                      l2_reg_dense, use_prelu, use_batch_norm, trainable_embedding, global_pooling):
+#         return cudnn_gru(embedding_matrix, embedding_size,
+#                          maxlen, max_features,
+#                          unit_nr, repeat_block,
+#                          dense_size, repeat_dense, dropout_dense,
+#                          l2_reg_dense, use_prelu, use_batch_norm, trainable_embedding, global_pooling)
 
 
 def scnn(embedding_matrix, embedding_size,

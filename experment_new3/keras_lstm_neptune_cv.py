@@ -63,7 +63,7 @@ rate_drop_dense=0.25
 dense_size=64
 kernel_size=10
 cnn_filters=64
-kernel_name='glove_dpcnn_cv'
+kernel_name='lstm_neptune_cv'
 
 def get_model(embedding_matrix):
     embedding_size=embedding_dims
