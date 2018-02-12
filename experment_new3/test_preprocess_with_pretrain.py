@@ -13,7 +13,7 @@ def get_Y(train):
     return train[CLASSES_LIST].values
 
 
-embedding_matrix_path = 'temp.npy'
+
 
 
 def get_X_train_X_test(train_df, test_df, toxic1, toxic2):
@@ -88,6 +88,10 @@ if __name__ == '__main__':
     toxic2 = pd.read_csv('../experiment2/attack_aggression.csv')
 
     X_train, X_test, data1, data2, word_index = get_X_train_X_test(train, test, toxic1, toxic2)
+    w2vpath='w2v.txt'
+    embedding_matrix = preprocessing.get_embedding_matrix(word_index,w2vpath)
+    embedding_matrix_path = 'gensim.npy'
+    np.save(embedding_matrix_path, embedding_matrix)
     class_list1 = ['toxicity']
     class_list2 = ['attack', 'aggression']
     y1 = toxic1[class_list1].values
