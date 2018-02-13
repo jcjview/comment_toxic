@@ -8,7 +8,7 @@ The code is tested on Keras 2.0.0 using Theano backend, and Python 3.5
 import numpy as np
 import pandas as pd
 from keras.callbacks import EarlyStopping, ModelCheckpoint, Callback
-from keras.layers import Dense, Input, Embedding, Dropout, Conv1D, GlobalMaxPooling1D,add
+from keras.layers import Dense, Input, Embedding, Dropout, Conv1D, GlobalMaxPooling1D, add
 from keras.models import Model
 from sklearn.metrics import roc_auc_score
 
@@ -61,14 +61,15 @@ rate_drop_dense = 0.28
 dense_size = 64
 kernel_size = 9
 cnn_filters = 64
-kernel_name = 'CNN_cv'
+kernel_name = 'CNN_mutilwin_cv'
 
 """
  define the model structure
 
  """
 
-kernel_sizes = [7, 8, 9, 10]
+kernel_sizes = [2, 3, 8, 9]
+
 
 def get_model(embedding_matrix):
     comment_input = Input(shape=(MAX_TEXT_LENGTH,), dtype='int32')
@@ -203,9 +204,9 @@ print(y.shape)
 print(len(word_index))
 print(embedding_matrix1.shape)
 
-seed = 1
+seed = 2
 np.random.seed(seed)
-cv_folds = 8
+cv_folds = 6
 
 from sklearn.model_selection import StratifiedKFold
 
@@ -238,7 +239,40 @@ for ind_tr, ind_te in skf.split(X_train, y_cv):
     pred_test += y_test
 # y_test, bst_val_score, STAMP = predict(model, X_train, X_test, y)
 
-# total_score = roc_auc_score(y, pred_oob)
-# print('Total - roc_auc_score:', total_score)
-# pred_test /= cv_folds
-# submit(pred_test, total_score, kernel_name)
+total_score = roc_auc_score(y, pred_oob)
+print('Total - roc_auc_score:', total_score)
+pred_test /= cv_folds
+submit(pred_test, total_score, kernel_name)
+
+tp=[0,0,0,0,0,0]
+fp=[0,0,0,0,0,0]
+fn=[0,0,0,0,0,0]
+tn=[0,0,0,0,0,0]
+tpall=0
+accbase=0
+recallbase=0
+y_pred = np.zeros(pred_oob.shape)
+y_pred[pred_oob > 0.5] = 1
+from sklearn.metrics import  confusion_matrix
+for i in range(6):
+    tn[i], fp[i], fn[i], tp[i] =confusion_matrix(y[:,i], y_pred[:,i]).ravel()
+
+    tpall+=tp[i]
+    accbase+=fp[i]+tp[i]
+    recallbase += fn[i] + tp[i]
+acc=(tpall/accbase)
+recall=(tpall/recallbase)
+f1=2*acc*recall/(acc+recall)
+print('acc',acc)
+print('recall',recall)
+print('f1',f1)
+error_vak_path = './log/'+kernel_name + '_error.txt'
+with open(error_vak_path,'w') as filepoint:
+    for i in range(6):
+        filepoint.write('{} {} {} {} {}\n'.format(CLASSES_LIST[i], tn[i], fp[i], fn[i], tp[i]))
+    filepoint.write('roc_auc_score %.4f\n' % total_score)
+    filepoint.write('acc %.4f\n'% acc)
+    filepoint.write('recall %.4f\n'% recall)
+    filepoint.write('f1 %.4f\n'% f1)
+
+
