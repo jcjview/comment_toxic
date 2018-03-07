@@ -198,6 +198,18 @@ def get_model(embedding_matrix):
 """
 train the model
 """
+def roll_matrix(data_train):
+    size = data_train.shape[0]
+    batch_size = 32
+    data = np.array(data_train, copy=True)
+    for index in range(size // batch_size - 1):
+        print(index * batch_size, (index+1) * batch_size)
+        if (index+1) * batch_size > size:
+            break
+        i = [index * batch_size, (index+1) * batch_size]
+        data[i] = np.roll(data_train[i], axis=1, shift=np.random.randint(data_train[i].shape[1]))
+    return data
+
 def train_fit_predict(model, data_train, labels_train, data_val, labels_val,
                       test_data, bag):
     data_val = roll_matrix(data_val)
