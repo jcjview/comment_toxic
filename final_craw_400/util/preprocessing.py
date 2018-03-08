@@ -2,6 +2,7 @@ import pickle
 import re
 
 import h5py
+import multiprocessing
 import numpy as np
 # from keras import initializations
 from keras.preprocessing.sequence import pad_sequences
@@ -81,6 +82,34 @@ def load_train_test_y():
         word_dict= pickle.load(f)
     return train, test, y,word_dict
 
+def worker(index,comments):
+    for i,text in enumerate (comments):
+        comments[i]=text_to_wordlist(text)
+    print("{} done",index)
+def multi_preprocess(job=2,comments=[]):
+    batch=len(comments)//job+1
+    pool_size = multiprocessing.cpu_count()+1
+    print("pool_size", pool_size)
+    pool = multiprocessing .Pool(pool_size)
+    # resultList = pool.map(worker, comments)
+    pool_outputs = pool.map(text_to_wordlist, comments)
+    # for i in range(job):
+    #     print(i,i*batch,(i+1)*batch,len(comments))
+    #     if i*batch>=len(comments):
+    #         break
+    #     elif (i+1) * batch >= len(comments):
+    #         p = pool.apply_async(func=worker, args=(i,comments[i*batch:len(comments)],))
+    #         # p.start()
+    #         # p.join()
+    #     else:
+    #         p = pool.apply_async(func=worker, args=(i,comments[i * batch: (i+1) * batch],))
+    #         # p.start()
+    #         # p.join()
+    #     print("start", i)
+    pool.close()
+    pool.join()
+    print('successful')
+    return pool_outputs
 def get_X_train_X_test(train_df, test_df):
     print('Processing text dataset')
     list_sentences_train = train_df["comment_text"].fillna("NA").values
@@ -88,14 +117,16 @@ def get_X_train_X_test(train_df, test_df):
     y = train_df[list_classes].values
     list_sentences_test = test_df["comment_text"].fillna("NA").values
     print('Processing new')
+    import copy
 
-    comments = []
-    for text in tqdm(list_sentences_train):
-        comments.append(text_to_wordlist(text))
-    test_comments = []
-
-    for text in tqdm(list_sentences_test):
-        test_comments.append(text_to_wordlist(text))
+    comments = list(list_sentences_train)
+    comments=multi_preprocess(job=4,comments=comments)
+    # for text in tqdm(list_sentences_train):
+    #     comments.append(text_to_wordlist(text))
+    test_comments = list(list_sentences_test)
+    test_comments=multi_preprocess(job=4,comments=test_comments)
+    # for text in tqdm(list_sentences_test):
+    #     test_comments.append(text_to_wordlist(text))
 
     with open('text.txt','w',encoding='utf-8') as fp:
          # for c in comments:
@@ -125,6 +156,13 @@ special_character_removal = re.compile(r'[^A-Za-z_\d?! ]', re.IGNORECASE)
 # regex to replace all numerics
 replace_numbers = re.compile(r'\d+', re.IGNORECASE)
 
+import string
+def character_range(text):
+    for ch in string.ascii_lowercase[:27]:
+        if ch in text:
+            template=r"("+ch+")\\1{3,}"
+            text = re.sub(template, ch, text)
+    return text
 
 
 def text_to_wordlist(text, remove_stopwords=False, stem_words=False):
@@ -144,6 +182,7 @@ def text_to_wordlist(text, remove_stopwords=False, stem_words=False):
     for u in c:
         text = text.replace(u, IP_LINK)
 
+    text=character_range(text)
     bad_word_dict = bad_dict
     # Regex to remove all Non-Alpha Numeric and space
     special_character_removal = re.compile(r'[^A-Za-z\d!?*\'.,; ]', re.IGNORECASE)

@@ -78,6 +78,7 @@ def get_model(embedding_matrix):
     x = Embedding(MAX_FEATURES, embedding_dims, weights=[embedding_matrix], trainable=False)(inp)
     x = SpatialDropout1D(dr)(x)
     x = Bidirectional(GRU(units, recurrent_dropout=rate_drop_dense, return_sequences=True))(x)
+    x = BatchNormalization()(x)
     # lstm = Bidirectional(LSTM(units, recurrent_dropout=rate_drop_dense,return_sequences=True))(x)
     # x=concatenate([gru, lstm])
     x1 = Conv1D(filters=cnn_filters,

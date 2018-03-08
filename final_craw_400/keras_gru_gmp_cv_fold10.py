@@ -66,7 +66,7 @@ rate_drop_dense = 0.28
 dense_size = 64
 kernel_size = 8
 cnn_filters = 64
-kernel_name = 'gru_gmp_cv1'
+kernel_name = 'gru_gmp_gav_cv1'
 num_lstm = 64
 rate_drop_lstm = 0.25
 lstm_output_size = 64
@@ -103,10 +103,22 @@ def get_model(embedding_matrix):
 """
 train the model
 """
-
+def roll_matrix(data_train):
+    size = data_train.shape[0]
+    batch_size = 32
+    data = np.array(data_train, copy=True)
+    for index in range(size // batch_size - 1):
+        print(index * batch_size, (index+1) * batch_size)
+        if (index+1) * batch_size > size:
+            break
+        i = [index * batch_size, (index+1) * batch_size]
+        data[i] = np.roll(data_train[i], axis=1, shift=np.random.randint(data_train[i].shape[1]))
+    return data
 
 def train_fit_predict(model, data_train, labels_train, data_val, labels_val,
                       test_data, bag):
+    data_val1 = roll_matrix(data_val)
+    data_train1 = roll_matrix(data_train)
     print(data_train.shape, labels_train.shape)
     print(data_val.shape, labels_val.shape)
 
@@ -119,11 +131,23 @@ def train_fit_predict(model, data_train, labels_train, data_val, labels_val,
 
     hist = model.fit(data_train, labels_train,
                      validation_data=(data_val, labels_val),
-                     epochs=50, batch_size=256, shuffle=True,
+                     epochs=4, batch_size=256, shuffle=True,
                      callbacks=[RocAucMetricCallback(), early_stopping, model_checkpoint])
+    bst_val_score = max(hist.history['roc_auc_val'])
+    for i in range(3):
+        hist1 = model.fit(data_train1, labels_train,
+                         validation_data=(data_val1, labels_val),
+                         epochs=1, batch_size=256, shuffle=True,
+                         callbacks=[RocAucMetricCallback()])
+        bst_val_score1 = max(hist1.history['roc_auc_val'])
+        print(bst_val_score,bst_val_score1)
+        if bst_val_score1<bst_val_score:
+            continue
+        else:
+            model.save(bst_model_path)
 
     model.load_weights(bst_model_path)
-    bst_val_score = max(hist.history['roc_auc_val'])
+
     print("bst_val_score", bst_val_score)
     ## make the submission
     print('Start making the submission before fine-tuning')

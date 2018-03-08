@@ -11,13 +11,14 @@ if __name__ == '__main__':
     X_train, X_test, word_index = preprocessing.get_X_train_X_test(train, test)
 
     with open('word_index.txt','w') as fp:
-        for i,v in word_index:
+        for i,v in word_index.items():
             fp.write("%s %d\n"%(i,v))
+
+    y = get_Y(train)
+    preprocessing.dump_X_Y_train_test(X_train, X_test, y, word_index)
 
     embedding_matrix = preprocessing.get_embedding_matrix(word_index,GLOVE_EMBEDDING_FILE)
     np.save(embedding_matrix_path, embedding_matrix)
-    y = get_Y(train)
-
     print('random')
     perm = np.random.permutation(len(y))
     X_train=X_train[perm]
@@ -25,7 +26,7 @@ if __name__ == '__main__':
 
 
 
-    preprocessing.dump_X_Y_train_test(X_train, X_test, y, word_index)
+
     X_train, X_test, y, word_index=preprocessing.load_train_test_y()
     embedding_matrix1=np.load(embedding_matrix_path)
     print(X_train.shape)
