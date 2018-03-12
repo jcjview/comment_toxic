@@ -82,7 +82,7 @@ def get_model(embedding_matrix):
     x = SpatialDropout1D(dr)(x)
     gru = Bidirectional(GRU(units, recurrent_dropout=rate_drop_dense, return_sequences=True))(x)
     lstm = Bidirectional(LSTM(units, recurrent_dropout=rate_drop_dense,return_sequences=True))(x)
-    x=concatenate([gru, lstm])
+    x=concatenate([gru, lstm],axis=-1)
     x = Conv1D(64, kernel_size=2, padding="valid", kernel_initializer="he_uniform")(x)
     avg_pool = GlobalAveragePooling1D()(x)
     max_pool = GlobalMaxPooling1D()(x)
@@ -92,7 +92,7 @@ def get_model(embedding_matrix):
     x = Dense(6, activation="sigmoid")(x)
     model = Model(inputs=inp, outputs=x)
     model.compile(loss="binary_crossentropy", optimizer=Adam(lr=lr, decay=lr_d), metrics=["accuracy"])
-
+    model.summary()
     return model
 
 """
@@ -114,7 +114,7 @@ def roll_matrix(data_train):
     batch_size = 32
     data = np.array(data_train, copy=True)
     for index in range(size // batch_size - 1):
-        print(index * batch_size, (index+1) * batch_size)
+        #print(index * batch_size, (index+1) * batch_size)
         if (index+1) * batch_size > size:
             break
         i = [index * batch_size, (index+1) * batch_size]

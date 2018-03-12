@@ -182,7 +182,7 @@ def text_to_wordlist(text, remove_stopwords=False, stem_words=False):
     for u in c:
         text = text.replace(u, IP_LINK)
 
-    text=character_range(text)
+
     bad_word_dict = bad_dict
     # Regex to remove all Non-Alpha Numeric and space
     special_character_removal = re.compile(r'[^A-Za-z\d!?*\'.,; ]', re.IGNORECASE)
@@ -211,7 +211,7 @@ def text_to_wordlist(text, remove_stopwords=False, stem_words=False):
     text = replace_numbers.sub('NUMBERREPLACER', text)
     text = text.split()
     text = " ".join(text)
-
+    text = character_range(text)
     if stem_words:
         text = text.split()
         stemmer = SnowballStemmer('english')

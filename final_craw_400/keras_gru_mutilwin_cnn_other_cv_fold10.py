@@ -145,8 +145,8 @@ def roll_matrix(data_train):
 def train_fit_predict(model, data_train, labels_train, data_val, labels_val,
                       test_data, bag):
 
-    data_val=roll_matrix(data_val)
-    data_train=roll_matrix(data_train)
+    # data_val=roll_matrix(data_val)
+    # data_train=roll_matrix(data_train)
     print(data_train.shape, labels_train.shape)
     print(data_val.shape, labels_val.shape)
     STAMP = kernel_name + '_%d_%.2f' % (bag, rate_drop_dense)

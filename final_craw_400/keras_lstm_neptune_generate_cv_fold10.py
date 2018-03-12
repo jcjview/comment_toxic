@@ -140,7 +140,7 @@ def train_fit_predict(model, data_train,labels_train,data_val,labels_val,
                                epochs=50,
                                validation_data=(data_val, labels_val),
                                verbose=1,
-                               callbacks=[RocAucMetricCallback(), early_stopping, model_checkpoint, csv_logger])
+                               callbacks=[early_stopping, model_checkpoint, csv_logger])
 
     model.load_weights(bst_model_path)
     bst_val_score = min(hist.history['val_loss'])
