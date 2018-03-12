@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from keras.callbacks import EarlyStopping, ModelCheckpoint, Callback
 from keras.layers import Dense, Input, Embedding, Dropout, Conv1D, GlobalMaxPooling1D, recurrent, RepeatVector, \
-    Bidirectional, GRU, BatchNormalization
+    Bidirectional, GRU, BatchNormalization, SpatialDropout1D
 from keras.models import Model
 from keras.optimizers import RMSprop
 from sklearn.metrics import roc_auc_score
@@ -76,7 +76,7 @@ def get_model(embedding_matrix):
 
     embedding_layer = Embedding(MAX_FEATURES, embedding_dims,
                   weights=[embedding_matrix], trainable=False)(input)
-    x = Dropout(rate_drop_dense)(embedding_layer)
+    x = SpatialDropout1D(rate_drop_dense)(embedding_layer)
     x = Bidirectional(GRU(lstm_output_size, return_sequences=True))(x)
     x = Dropout(rate_drop_dense)(x)
     x = Bidirectional(GRU(lstm_output_size, return_sequences=False))(x)
@@ -120,8 +120,8 @@ def roll_matrix(data_train):
 
 def train_fit_predict(model, data_train, labels_train, data_val, labels_val,
                       test_data, bag):
-    data_val = roll_matrix(data_val)
-    data_train = roll_matrix(data_train)
+    # data_val = roll_matrix(data_val)
+    # data_train = roll_matrix(data_train)
     print(data_train.shape, labels_train.shape)
     print(data_val.shape, labels_val.shape)
     STAMP = kernel_name + '_%d_%.2f' % (bag, rate_drop_dense)

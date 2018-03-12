@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from keras.callbacks import EarlyStopping, ModelCheckpoint, Callback
 from keras.layers import Dense, Input, Embedding, Dropout, Conv1D, GlobalMaxPooling1D, add, GlobalAveragePooling1D, \
-    LSTM, BatchNormalization, merge, PReLU
+    LSTM, BatchNormalization, merge, PReLU, SpatialDropout1D
 from keras.models import Model
 from sklearn.metrics import roc_auc_score
 
@@ -80,7 +80,7 @@ def get_model(embedding_matrix):
                                 input_length=MAX_TEXT_LENGTH,
                                 trainable=False)
     embedded_sequences = embedding_layer(comment_input)
-    x = Dropout(rate_drop_dense)(embedded_sequences)
+    x = SpatialDropout1D(rate_drop_dense)(embedded_sequences)
 
     xconv = Conv1D(filters=128,
                    kernel_size=3,

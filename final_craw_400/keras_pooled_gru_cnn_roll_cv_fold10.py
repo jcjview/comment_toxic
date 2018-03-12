@@ -142,7 +142,7 @@ def train_fit_predict(model, data_train, labels_train, data_val, labels_val,
 
     hist = model.fit(data_train, labels_train,
                      validation_data=(data_val, labels_val),
-                     epochs=12, batch_size=256, shuffle=True,
+                     epochs=50, batch_size=256, shuffle=True,
                      callbacks=[RocAucMetricCallback(), early_stopping, model_checkpoint,csv_logger])
 
     model.load_weights(bst_model_path)

@@ -7,18 +7,17 @@ The code is tested on Keras 2.0.0 using Theano backend, and Python 3.5
 
 import numpy as np
 import pandas as pd
+from keras import backend as K
 from keras.callbacks import EarlyStopping, ModelCheckpoint, Callback
-from keras.layers import Dense, Input, Embedding, Dropout, Conv1D, GlobalMaxPooling1D, recurrent, RepeatVector, \
-    Bidirectional, GRU, BatchNormalization,Flatten
+from keras.engine.topology import Layer
+from keras.layers import Activation
+from keras.layers import Dense, Input, Embedding, Dropout, Bidirectional, GRU, Flatten, SpatialDropout1D
 from keras.models import Model
-from keras.optimizers import RMSprop
 from sklearn.metrics import roc_auc_score
 
 from config import *
 from util import preprocessing
-from keras import backend as K
-from keras.engine.topology import Layer
-from keras.layers import Activation
+
 
 def squash(x, axis=-1):
     # s_squared_norm is really small
@@ -26,17 +25,19 @@ def squash(x, axis=-1):
     # scale = K.sqrt(s_squared_norm)/ (0.5 + s_squared_norm)
     # return scale * x
     s_squared_norm = K.sum(K.square(x), axis, keepdims=True)
-    scale = K.sqrt(s_squared_norm+ K.epsilon())
-    return x/scale
+    scale = K.sqrt(s_squared_norm + K.epsilon())
+    return x / scale
 
-#A Capsule Implement with Pure Keras
+
+# A Capsule Implement with Pure Keras
 class Capsule(Layer):
-    def __init__(self, num_capsule, dim_capsule, routings=3,kernel_size=(9,1), share_weights=True, activation='default', **kwargs):
+    def __init__(self, num_capsule, dim_capsule, routings=3, kernel_size=(9, 1), share_weights=True,
+                 activation='default', **kwargs):
         super(Capsule, self).__init__(**kwargs)
         self.num_capsule = num_capsule
         self.dim_capsule = dim_capsule
         self.routings = routings
-        self.kernel_size=kernel_size
+        self.kernel_size = kernel_size
         self.share_weights = share_weights
         if activation == 'default':
             self.activation = squash
@@ -73,11 +74,11 @@ class Capsule(Layer):
         u_hat_vecs = K.reshape(u_hat_vecs, (batch_size, input_num_capsule,
                                             self.num_capsule, self.dim_capsule))
         u_hat_vecs = K.permute_dimensions(u_hat_vecs, (0, 2, 1, 3))
-        #final u_hat_vecs.shape = [None, num_capsule, input_num_capsule, dim_capsule]
+        # final u_hat_vecs.shape = [None, num_capsule, input_num_capsule, dim_capsule]
 
-        b = K.zeros_like(u_hat_vecs[:,:,:,0]) #shape = [None, num_capsule, input_num_capsule]
+        b = K.zeros_like(u_hat_vecs[:, :, :, 0])  # shape = [None, num_capsule, input_num_capsule]
         for i in range(self.routings):
-            b = K.permute_dimensions(b, (0, 2, 1)) #shape = [None, input_num_capsule, num_capsule]
+            b = K.permute_dimensions(b, (0, 2, 1))  # shape = [None, input_num_capsule, num_capsule]
             c = K.softmax(b)
             c = K.permute_dimensions(c, (0, 2, 1))
             b = K.permute_dimensions(b, (0, 2, 1))
@@ -146,7 +147,8 @@ gru_len = 128
 Routings = 5
 Num_capsule = 10
 Dim_capsule = 16
-dropout_p=0.25
+dropout_p = 0.25
+
 
 def get_model(embedding_matrix):
     input1 = Input(shape=(MAX_TEXT_LENGTH,))
@@ -155,12 +157,16 @@ def get_model(embedding_matrix):
                             input_length=MAX_TEXT_LENGTH,
                             weights=[embedding_matrix],
                             trainable=False)(input1)
-    x = Bidirectional(GRU(gru_len, activation='relu', dropout=dropout_p,recurrent_dropout=dropout_p,return_sequences=True))(embed_layer)
+    embed_layer = SpatialDropout1D(rate_drop_dense)(embed_layer)
+
+    x = Bidirectional(
+        GRU(gru_len, activation='relu', dropout=dropout_p, recurrent_dropout=dropout_p, return_sequences=True))(
+        embed_layer)
     capsule = Capsule(num_capsule=Num_capsule, dim_capsule=Dim_capsule, routings=Routings,
                       share_weights=True)(x)
     # output_capsule = Lambda(lambda x: K.sqrt(K.sum(K.square(x), 2)))(capsule)
-    capsule=Flatten()(capsule)
-    capsule=Dropout(dropout_p)(capsule)
+    capsule = Flatten()(capsule)
+    capsule = Dropout(dropout_p)(capsule)
     output = Dense(6, activation='sigmoid')(capsule)
     model = Model(inputs=input1, outputs=output)
     model.compile(
@@ -174,22 +180,25 @@ def get_model(embedding_matrix):
 """
 train the model
 """
+
+
 def roll_matrix(data_train):
     size = data_train.shape[0]
     batch_size = 32
     data = np.array(data_train, copy=True)
     for index in range(size // batch_size - 1):
-        print(index * batch_size, (index+1) * batch_size)
-        if (index+1) * batch_size > size:
+        print(index * batch_size, (index + 1) * batch_size)
+        if (index + 1) * batch_size > size:
             break
-        i = [index * batch_size, (index+1) * batch_size]
+        i = [index * batch_size, (index + 1) * batch_size]
         data[i] = np.roll(data_train[i], axis=1, shift=np.random.randint(data_train[i].shape[1]))
     return data
 
+
 def train_fit_predict(model, data_train, labels_train, data_val, labels_val,
                       test_data, bag):
-    data_val = roll_matrix(data_val)
-    data_train = roll_matrix(data_train)
+    # data_val = roll_matrix(data_val)
+    # data_train = roll_matrix(data_train)
     print(data_train.shape, labels_train.shape)
     print(data_val.shape, labels_val.shape)
     STAMP = kernel_name + '_%d_%.2f' % (bag, rate_drop_dense)
@@ -200,8 +209,8 @@ def train_fit_predict(model, data_train, labels_train, data_val, labels_val,
                                        save_best_only=True, verbose=1, save_weights_only=True)
     from keras.callbacks import CSVLogger
 
-    csv_logger = CSVLogger('./log/'+STAMP+'log.csv', append=True, separator=';')
-    batch_size=256
+    csv_logger = CSVLogger('./log/' + STAMP + 'log.csv', append=True, separator=';')
+    batch_size = 256
     # hist =model.fit_generator(generator =generate_batch_data_random(data_train, labels_train, batch_size),
     #                           steps_per_epoch=len(data_train) / batch_size,
     #                           epochs=50,
@@ -212,7 +221,7 @@ def train_fit_predict(model, data_train, labels_train, data_val, labels_val,
     hist = model.fit(data_train, labels_train,
                      validation_data=(data_val, labels_val),
                      epochs=50, batch_size=256, shuffle=True,
-                     callbacks=[RocAucMetricCallback(), early_stopping, model_checkpoint,csv_logger])
+                     callbacks=[RocAucMetricCallback(), early_stopping, model_checkpoint, csv_logger])
 
     model.load_weights(bst_model_path)
     bst_roc_auc_val = min(hist.history['val_loss'])

@@ -15,7 +15,7 @@ from keras import backend as K
 from keras import initializers, regularizers, constraints
 from keras.callbacks import EarlyStopping, ModelCheckpoint, Callback
 from keras.engine.topology import Layer
-from keras.layers import Dense, Input, LSTM, Embedding, Dropout
+from keras.layers import Dense, Input, LSTM, Embedding, Dropout, SpatialDropout1D
 from keras.layers.normalization import BatchNormalization
 from keras.models import Model
 ########################################
@@ -178,7 +178,7 @@ def get_model(embedding_matrix):
                                 input_length=MAX_TEXT_LENGTH,
                                 trainable=False)
     embedded_sequences = embedding_layer(comment_input)
-    embedded_sequences = Dropout(rate_drop_dense)(embedded_sequences)
+    embedded_sequences = SpatialDropout1D(rate_drop_dense)(embedded_sequences)
     lstm_layer = LSTM(recurrent_units, dropout=rate_drop_lstm, recurrent_dropout=rate_drop_lstm, return_sequences=True)
 
     x = lstm_layer(embedded_sequences)

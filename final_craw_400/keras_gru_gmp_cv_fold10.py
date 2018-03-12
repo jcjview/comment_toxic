@@ -124,14 +124,14 @@ def train_fit_predict(model, data_train, labels_train, data_val, labels_val,
 
     STAMP = kernel_name + '_%d_%.2f' % (bag, rate_drop_dense)
     print(STAMP)
-    early_stopping = EarlyStopping(monitor='roc_auc_val', patience=5, mode='max')
+    early_stopping = EarlyStopping(monitor='val_loss', patience=5, mode='min')
     bst_model_path = STAMP + '.h5'
     model_checkpoint = ModelCheckpoint(bst_model_path, monitor='roc_auc_val', mode='max',
                                        save_best_only=True, verbose=1, save_weights_only=True)
 
     hist = model.fit(data_train, labels_train,
                      validation_data=(data_val, labels_val),
-                     epochs=4, batch_size=256, shuffle=True,
+                     epochs=50, batch_size=256, shuffle=True,
                      callbacks=[RocAucMetricCallback(), early_stopping, model_checkpoint])
     bst_val_score = max(hist.history['roc_auc_val'])
     for i in range(3):
