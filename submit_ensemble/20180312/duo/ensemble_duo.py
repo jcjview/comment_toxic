@@ -36,10 +36,10 @@ col = blend.columns
 col = col.tolist()
 col.remove('id')
 # keeping weight of single best model higher than other blends..
-blend[col] =0.5*minmax_scale(sup[col].values) + \
-            0.25*minmax_scale(p1[col].values) + \
-            0.25 *minmax_scale(p2[col].values)
+blend[col] =0.8*minmax_scale(sup[col].values) + \
+            0.1*minmax_scale(p1[col].values) + \
+            0.1 *minmax_scale(p2[col].values)
 
 
 print('stay tight kaggler')
-blend.to_csv("ensemble_duo_lstm_neptune.csv", index=False)
+blend.to_csv("ensemble_duo_lstm_neptune.csv", index=False,float_format='%.8f')#9855 not good
