@@ -209,15 +209,15 @@ for ind_tr, ind_te in skf.split(X_train, y_cv):
     x_train = X_train[ind_tr]
     x_val = X_train[ind_te]
     x_train = np.concatenate((x_train, data1[ind_tr], data2[ind_tr], data3[ind_tr]), axis=0)
-    x_val = np.concatenate((x_val, data1[ind_te], data2[ind_te], data3[ind_te]), axis=0)
+    x_val1 = np.concatenate((x_val, data1[ind_te], data2[ind_te], data3[ind_te]), axis=0)
     y_train = y[ind_tr]
     y_train = np.concatenate((y_train, y1[ind_tr], y2[ind_tr], y3[ind_tr]), axis=0)
 
     y_val = y[ind_te]
-    y_val = np.concatenate((y_val, y1[ind_te], y2[ind_te], y3[ind_te]), axis=0)
+    y_val1 = np.concatenate((y_val, y1[ind_te], y2[ind_te], y3[ind_te]), axis=0)
 
     model = get_model(embedding_matrix1)
-    y_test, bst_val_score, STAMP = train_fit_predict(model, x_train, y_train, x_val, y_val
+    y_test, bst_val_score, STAMP = train_fit_predict(model, x_train, y_train, x_val1, y_val1
                                                      , X_test, count)
     y_val_pred = model.predict(x_val, batch_size=1024, verbose=1)
     pred_oob[ind_te] = y_val_pred
