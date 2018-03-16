@@ -2,21 +2,12 @@ import pandas as pd
 
 path = './'
 
-sup = pd.read_csv('0.9872_lstm_neptune_cv_fold10.csv')
-p1 = pd.read_csv('0.9866_lstm_neptune_cv_fold10.csv')
-p2 = pd.read_csv('0.9861_lstm_neptune_cv_fold10_len200.csv')
-# p3 = pd.read_csv('0.9881_pooled_gru_cnn_cv_fold10.csv')
-# p4 = pd.read_csv('0.9845_lstm_neptune_cv_fold10.csv')
-# p5 = pd.read_csv('0.9892_capsule_cv_fold10.csv')
-# 0.9889_pooled_gru_cnn_cv_fold10.csv
-# 0.9888_capsule_cv_fold10.csv
-# 0.9886_bgru1_roll_cv_fold10.csv
-# 0.9885_bgru1_roll_cv_fold10_len200.csv
-# 0.9879_bgru1_roll_cv_fold10.csv
-# 0.9875_pooled_gru_cnn_cv_fold10.csv
-# 0.9874_relu_cnn_lstm_cv.csv
-# 0.9872_lstm_neptune_cv_fold10.csv
-# 0.9870_ATTENTION_lstm_dropout1_cv.csv
+sup = pd.read_csv('0.9891_pooled_gru_cnn_cv_fold10_500.csv')
+p1 = pd.read_csv('0.9889_pooled_gru_cnn_cv_fold10.csv')
+p2 = pd.read_csv('0.9888_capsule_cv_fold10.csv')
+p3 = pd.read_csv('0.9887_bgru1_roll_cv_fold10_500.csv')
+p4 = pd.read_csv('0.9886_capsule_cv_fold10.csv')
+p5 = pd.read_csv('0.9886_bgru1_roll_cv_fold10.csv')
 #
 #
 
@@ -36,10 +27,13 @@ col = blend.columns
 col = col.tolist()
 col.remove('id')
 # keeping weight of single best model higher than other blends..
-blend[col] =0.8*minmax_scale(sup[col].values) + \
-            0.1*minmax_scale(p1[col].values) + \
-            0.1 *minmax_scale(p2[col].values)
+blend[col] =(minmax_scale(sup[col].values) + \
+            minmax_scale(p1[col].values) + \
+            minmax_scale(p2[col].values) + \
+            minmax_scale(p3[col].values) + \
+            minmax_scale(p4[col].values) + \
+            minmax_scale(p5[col].values))/6
 
 
 print('stay tight kaggler')
-blend.to_csv("ensemble_duo_lstm_neptune.csv", index=False,float_format='%.8f')#9855 not good
+blend.to_csv("ensemble_duo_0316.csv.gz", index=False,float_format='%.8f', compression='gzip')#9855 not good
