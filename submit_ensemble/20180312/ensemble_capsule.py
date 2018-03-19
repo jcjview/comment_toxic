@@ -13,7 +13,7 @@ p6 = pd.read_csv('submit_ensemble/20180312/9859_glove_300_capsule.csv')
 
 p7 = pd.read_csv('submit_ensemble/20180306/9858_glove_500_capsule.csv')
 
-p8 = pd.read_csv('submit_ensemble/20180306/9854_crawl_500_capsule.csv')
+p8 = pd.read_csv('submit_ensemble/20180312/capsule_with_processed_data9856.csv')
 
 # All credits goes to original authors.. Just another blend...
 from sklearn.preprocessing import minmax_scale
@@ -30,5 +30,5 @@ blend[col] =0.5*minmax_scale(p6[col].values) + \
 
 
 print('stay tight kaggler')
-blend.to_csv("submit_ensemble/20180312/ensemble_capsule0312.csv", index=False,float_format='%.8f', compression='gzip')
-blend.to_csv("submit_ensemble/20180312/ensemble_capsule0312.csv", index=False)
+blend.to_csv("submit_ensemble/20180312/ensemble_capsule0319.csv.gz", index=False,float_format='%.8f', compression='gzip')
+# blend.to_csv("submit_ensemble/20180312/ensemble_capsule0312.csv", index=False)#9859
