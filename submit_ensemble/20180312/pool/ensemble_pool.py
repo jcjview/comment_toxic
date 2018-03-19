@@ -40,4 +40,4 @@ blend[col] = 0.3 * minmax_scale(sup[col].values) + \
              0.1 * minmax_scale(p4[col].values)
 
 print('stay tight kaggler')
-blend.to_csv("ensemble_pool_gru_0319v1.csv.gz", index=False, float_format='%.8f', compression='gzip')  # 0.9863 0.9863
+blend.to_csv("ensemble_pool_gru_0319v1.csv.gz", index=False, float_format='%.8f', compression='gzip')  # 0.9863 0.9863  9867
