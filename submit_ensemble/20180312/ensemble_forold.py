@@ -4,15 +4,12 @@ path = './'
 
 sup = pd.read_csv('submit_ensemble/20180312/blend_it_all.csv')#9867
 p1 = pd.read_csv('submit_ensemble/20180319/ensemble_bgru_0319v1_9863.csv')#9863
-# p2 = pd.read_csv('submit_ensemble/20180312/duo/ensemble_duo_0316.csv')#0.9856
-
-p3 = pd.read_csv('submit_ensemble/20180312/pool/ensemble_pool_gru_0319v1.csv')#~9867
-
-# p4 = pd.read_csv('submit_ensemble/20180312/duo/0.9872_lstm_neptune_cv_fold10.csv')#9856
-# p5 = pd.read_csv('0.9892_capsule_cv_fold10.csv')
-# p5 = pd.read_csv('ensemble_capsule.csv')
+p2 = pd.read_csv('submit_ensemble/20180312/duo/ensemble_duo_0316.csv')#0.9856
+p3 = pd.read_csv('submit_ensemble/20180312/pool/ensemble_pool_gru_0315v4.csv')#~9863
+p4 = pd.read_csv('submit_ensemble/20180312/duo/0.9872_lstm_neptune_cv_fold10.csv')#9856
 p5 = pd.read_csv('submit_ensemble/20180319/ensemble_capsule0319_9865.csv')#9865
-# p7 = pd.read_csv('9855_glove_500_capsule.csv')
+p6 = pd.read_csv('submit_ensemble/20180312/pool/0.9899_pooled_gru_cnn1_cv_fold10_preprocess_glove_300_0316_9860.csv')#~9860
+p7 = pd.read_csv('submit_ensemble/20180312/two_rnn/0.9891_two_rnn_cnn_2e_cv_fold10_glove_300_prep_9858.csv')
 #
 # p8 = pd.read_csv('9854_crawl_500_capsule.csv')
 
@@ -26,14 +23,14 @@ col = col.tolist()
 col.remove('id')
 # keeping weight of single best model higher than other blends..
 blend[col] = \
-    0.3 * minmax_scale(sup[col].values) + \
-    0.2 *minmax_scale (p1[col].values) + \
-    0.3 *minmax_scale (p3[col].values) + \
-    0.2 * minmax_scale(p5[col].values)
-    # 0.05 *minmax_scale (p1[col].values) + \
-    # 0.05 * minmax_scale(p4[col].values) + \
-
-    # 0.1 * (p2[col].values) + \
+    (0.2 * minmax_scale(sup[col].values) + \
+    0.1 *minmax_scale (p1[col].values) + \
+    0.05 *minmax_scale (p2[col].values) + \
+    0.2 * minmax_scale(p3[col].values) + \
+    0.05 *minmax_scale (p4[col].values) + \
+    0.2 * minmax_scale(p5[col].values) + \
+    0.1 * minmax_scale(p6[col].values) +\
+    0.1 * minmax_scale(p7[col].values) )/(0.2+0.1+0.05+0.2+0.05+0.2++0.1+0.1)
 
 # blend[col] = \
 #     0.25 * minmax_scale(sup[col].values) + \
@@ -49,4 +46,4 @@ blend[col] = \
 # / (0.3 + 0.1 + 0.2 + 0.2 + 0.1 + 0.1 + 0.25 + 0.1 + 0.1)
 
 print('stay tight kaggler')
-blend.to_csv("submit_ensemble/20180319/ensemble_0319v2_ms.csv.gz", index=False,float_format='%.9f', compression='gzip')
+blend.to_csv("submit_ensemble/20180319/ensemble_0319v3_ms.csv.gz", index=False,float_format='%.9f', compression='gzip')
