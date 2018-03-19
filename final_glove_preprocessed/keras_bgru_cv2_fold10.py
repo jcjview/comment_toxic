@@ -75,7 +75,7 @@ def get_model(embedding_matrix):
 
     embedding_layer = Embedding(MAX_FEATURES, embedding_dims,
                                 weights=[embedding_matrix], trainable=False)(input)
-    x = SpatialDropout1D(0.4)(embedding_layer)
+    x = SpatialDropout1D(rate_drop_dense)(embedding_layer)
     x = Bidirectional(GRU(lstm_output_size, return_sequences=True))(x)
     x = Dropout(rate_drop_dense)(x)
     x = Bidirectional(GRU(lstm_output_size, return_sequences=False))(x)
@@ -116,9 +116,9 @@ def train_fit_predict(model, data_train, labels_train, data_val, labels_val,
     print(data_val.shape, labels_val.shape)
     STAMP = kernel_name + '_%d_%.2f' % (bag, rate_drop_dense)
     print(STAMP)
-    early_stopping = EarlyStopping(monitor='val_loss', patience=5, mode='min')
+    early_stopping = EarlyStopping(monitor='roc_auc_val', patience=5, mode='max')
     bst_model_path = STAMP + '.h5'
-    model_checkpoint = ModelCheckpoint(bst_model_path, monitor='val_loss', mode='min',
+    model_checkpoint = ModelCheckpoint(bst_model_path, monitor='roc_auc_val', mode='max',
                                        save_best_only=True, verbose=1, save_weights_only=True)
     from keras.callbacks import CSVLogger
 
@@ -130,13 +130,13 @@ def train_fit_predict(model, data_train, labels_train, data_val, labels_val,
                      callbacks=[RocAucMetricCallback(), early_stopping, model_checkpoint, csv_logger])
 
     model.load_weights(bst_model_path)
-    bst_val_score = min(hist.history['val_loss'])
-    print("bst_val_score", bst_val_score)
+    bst_roc_auc_val = max(hist.history['roc_auc_val'])
+    print("bst_val_score", bst_roc_auc_val)
 
     ## make the submission
     print('Start making the submission before fine-tuning')
     y_test = model.predict(test_data, batch_size=1024, verbose=1)
-    return y_test, bst_val_score, STAMP
+    return y_test, bst_roc_auc_val, STAMP
 
 
 def submit(y_test, bst_val_score, STAMP):
@@ -151,7 +151,7 @@ def get_Y(train):
 
 embedding_matrix_path = 'temp.npy'
 
-X_train, X_test, y, word_index, data1, data2, data3 = preprocessing.load_train_test_y()
+X_train, X_test, y, word_index= preprocessing.load_train_test_y()
 embedding_matrix1 = np.load(embedding_matrix_path)
 print(X_train.shape)
 print(X_test.shape)
@@ -159,7 +159,7 @@ print(y.shape)
 print(len(word_index))
 print(embedding_matrix1.shape)
 
-seed = 1
+seed = 201803159
 np.random.seed(seed)
 cv_folds = 10
 
@@ -176,12 +176,6 @@ print(y_cv.shape)
 X_train = np.array(X_train, copy=True)
 y = np.array(y, copy=True)
 
-data1 = np.array(data1, copy=True)
-data2 = np.array(data2, copy=True)
-data3 = np.array(data3, copy=True)
-y1 = np.array(y, copy=True)
-y2 = np.array(y, copy=True)
-y3 = np.array(y, copy=True)
 for ind_tr, ind_te in skf.split(X_train, y_cv):
     y_val = y[ind_te]
     print(np.sum(y_val))
@@ -192,20 +186,16 @@ for ind_tr, ind_te in skf.split(X_train, y_cv):
     # data1[ind_tr]
     # data2[ind_tr]
     # data3[ind_tr]
-    x_train = np.concatenate((x_train, data1[ind_tr], data2[ind_tr], data3[ind_tr]), axis=0)
     x_val = X_train[ind_te]
     # data1[ind_te]
     # data2[ind_te]
     # data3[ind_te]
-    x_val1 = np.concatenate((x_val, data1[ind_te], data2[ind_te], data3[ind_te]), axis=0)
 
     y_train = y[ind_tr]
     y_val = y[ind_te]
-    y_train = np.concatenate((y_train, y1[ind_tr], y2[ind_tr], y3[ind_tr]), axis=0)
-    y_val1 = np.concatenate((y_val, y1[ind_te], y2[ind_te], y3[ind_te]), axis=0)
 
     model = get_model(embedding_matrix1)
-    y_test, bst_val_score, STAMP = train_fit_predict(model, x_train, y_train, x_val1, y_val1
+    y_test, bst_val_score, STAMP = train_fit_predict(model, x_train, y_train, x_val, y_val
                                                      , X_test, count)
     y_val_pred = model.predict(x_val, batch_size=1024, verbose=1)
     pred_oob[ind_te] = y_val_pred
