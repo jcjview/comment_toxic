@@ -2,7 +2,7 @@ import pandas as pd
 
 path = './'
 
-sup = pd.read_csv('0.9883_relu_cnn_lstm_cv_craw_300_0311.csv')
+sup = pd.read_csv('0.9883_relu_cnn_lstm_cv_craw_300_0311.csv')#0.9848
 p1 = pd.read_csv('0.9877_relu_cnn_lstm_cv_craw_150.csv')
 p2 = pd.read_csv('0.9874_relu_cnn_lstm_cv_300_0305.csv')
 p3 = pd.read_csv('../duo/0.9874_relu_cnn_lstm_cv.csv')
